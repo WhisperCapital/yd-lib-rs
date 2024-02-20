@@ -1,0 +1,5 @@
+#include "ydClient/ydAPI_c++/include/ydApi.h"
+#include "ydClient/ydAPI_c++/include/ydDataStruct.h"
+#include "ydClient/ydAPI_c++/include/ydDataType.h"
+#include "ydClient/ydAPI_c++/include/ydError.h"
+#include "ydClient/ydAPI_c++/include/ydUtil.h"
