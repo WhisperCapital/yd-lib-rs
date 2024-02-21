@@ -19,6 +19,8 @@ cargo build
 
 ### 运行示例
 
+TODO: 将两个 fix 加入代码里自动执行，省得每次运行
+
 ```sh
 # fix `error while loading shared libraries: libyd.so: cannot open shared object file: No such file or directory`
 ln -s ydAPI_c++/linux64/yd.so ydAPI_c++/linux64/libyd.so
