@@ -14,11 +14,16 @@ fn main() {
     };
 
     // Adjust the path to your specific setup if necessary
-    let lib_path = format!("ydClient/ydAPI_c++/{}/", lib_dir);
-    println!("cargo:rustc-link-search=native={}", lib_path);
+    let project_dir = env::current_dir().unwrap();
+    let lib_path = project_dir.join("ydClient").join("ydAPI_c++").join(lib_dir);
+    // Ensure the path is valid and print it for debugging
+    assert!(lib_path.exists(), "Library path does not exist: {:?}", lib_path);
+    println!("cargo:rustc-link-search=native={}", lib_path.display());
+    println!("Debug: lib_path is {}", lib_path.display());
 
     // The library name is the same across platforms
-    println!("cargo:rustc-link-lib=yd");
+    // println!("cargo:rustc-link-lib=yd");
+    println!("cargo:rustc-link-lib=dylib=yd");
 
     let bindings = bindgen::Builder::default()
         .header("wrapper.hpp")
