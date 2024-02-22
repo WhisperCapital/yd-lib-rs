@@ -23,8 +23,6 @@ TODO: 将两个 fix 加入代码里自动执行，省得每次运行
 
 ```sh
 # fix `error while loading shared libraries: libyd.so: cannot open shared object file: No such file or directory`
-ln -s ydAPI_c++/linux64/yd.so ydAPI_c++/linux64/libyd.so
-# fix `/usr/bin/ld: cannot find -lyd: No such file or directory` error
-export LD_LIBRARY_PATH=/root/repo/yd-lib-rs/ydClient/ydAPI_c++/linux64:$LD_LIBRARY_PATH
+mv ydClient/ydAPI_c++/linux64/yd.so ydClient/ydAPI_c++/linux64/libyd.so
 cargo run --example yd_version
 ```

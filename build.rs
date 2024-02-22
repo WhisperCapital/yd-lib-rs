@@ -19,6 +19,8 @@ fn main() {
     // Ensure the path is valid and print it for debugging
     assert!(lib_path.exists(), "Library path does not exist: {:?}", lib_path);
     println!("cargo:rustc-link-search=native={}", lib_path.display());
+    // fix `/usr/bin/ld: cannot find -lyd: No such file or directory` error, same as `export LD_LIBRARY_PATH=/root/repo/yd-lib-rs/ydClient/ydAPI_c++/linux64:$LD_LIBRARY_PATH`
+    println!("cargo:rustc-link-arg=-Wl,-rpath,{}", lib_path.display());
     println!("Debug: lib_path is {}", lib_path.display());
 
     // The library name is the same across platforms
