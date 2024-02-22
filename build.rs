@@ -5,12 +5,10 @@ fn main() {
     println!("cargo:rustc-link-lib=dylib=stdc++");
 
     // Determine the platform-specific library directory
-    let lib_dir = if cfg!(target_os = "linux") {
-        "linux64"
-    } else if cfg!(target_os = "windows") {
-        "win64" // Assuming you're targeting 64-bit Windows
-    } else {
-        panic!("Unsupported OS");
+    let lib_dir = match env::var("CARGO_CFG_TARGET_OS").as_deref() {
+        Ok("linux") => "linux64",
+        Ok("windows") => "win64",
+        _ => panic!("Unsupported OS"),
     };
 
     let project_dir = env::current_dir().unwrap();
@@ -33,6 +31,7 @@ fn main() {
         .clang_arg(format!("-I{}", lib_path.join("include").display())) // Adjust include path as necessary
         .generate()
         .expect("Unable to generate bindings");
+    // TODO: fix "expected trait, found struct `YDListener`"
 
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
     bindings

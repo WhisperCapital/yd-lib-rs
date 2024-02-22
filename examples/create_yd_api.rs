@@ -1,0 +1,100 @@
+// Import necessary crates and modules. Adjust these imports based on your actual project structure and dependencies.
+use std::ffi::{CStr, CString};
+use std::os::raw::c_char;
+use std::ptr::null;
+
+// Assuming `yd_lib_rs` is a Rust crate that provides FFI bindings to the YDApi C++ library.
+use yd_lib_rs::{YDApi, YDListener, YDInstrument, YDAccountInstrumentInfo, YDPrePosition, YDMarketData, YDOrder, YDTrade, YDInputOrder, YDCancelOrder};
+
+// Define the Rust listener that implements `YDListener`. This struct will handle callbacks from the YDApi.
+struct Example1Listener {
+    api: YDApi,
+    username: CString,
+    password: CString,
+    instrument_id: CString,
+    max_position: i32,
+    max_order_ref: i32,
+    has_order: bool,
+}
+
+impl Example1Listener {
+    fn new(api: YDApi, username: &str, password: &str, instrument_id: &str, max_position: i32) -> Self {
+        Self {
+            api,
+            username: CString::new(username).unwrap(),
+            password: CString::new(password).unwrap(),
+            instrument_id: CString::new(instrument_id).unwrap(),
+            max_position,
+            max_order_ref: 0,
+            has_order: false,
+        }
+    }
+}
+
+impl YDListener for Example1Listener {
+  fn notify_ready_for_login(&mut self, has_login_failed: bool) {
+      if has_login_failed {
+          println!("Previous login attempt failed, retrying...");
+      }
+      // Attempt to login
+      let username_ptr = self.username.as_ptr();
+      let password_ptr = self.password.as_ptr();
+      if !self.api.login(username_ptr, password_ptr, null(), null()) {
+          println!("Cannot login");
+          std::process::exit(1);
+      }
+  }
+
+  fn notify_login(&mut self, error_no: i32, max_order_ref: i32, is_monitor: bool) {
+      if error_no == 0 {
+          self.max_order_ref = max_order_ref;
+          println!("Login successfully.");
+      } else {
+          println!("Login failed, errorNo={}", error_no);
+          std::process::exit(1);
+      }
+  }
+
+  fn notify_finish_init(&mut self) {
+      // Initialization logic after successful login
+      let instrument_ptr = self.instrument_id.as_ptr();
+      // Assuming `get_instrument_by_id` returns an Option pointing to a YDInstrument
+      match self.api.get_instrument_by_id(instrument_ptr) {
+          Some(instrument) => {
+              // Perform further actions with `instrument`, such as subscribing to market data or querying account info
+              println!("Instrument {} initialized.", self.instrument_id.to_string_lossy());
+          },
+          None => {
+              println!("Cannot find instrument {}", self.instrument_id.to_string_lossy());
+              std::process::exit(1);
+          }
+      }
+      // Additional initialization logic...
+  }
+
+  fn notify_market_data(&mut self, market_data: &YDMarketData) {
+      // Market data processing logic
+      // This might involve checking for certain conditions to place or cancel orders
+      println!("Received market data update.");
+  }
+
+  // Implement other callback methods as necessary, following the logic from the provided C++ example.
+  // This might include methods like `notify_order`, `notify_trade`, and any other callbacks relevant to your application.
+}
+
+
+fn main() {
+    let config_filename = "examples/config.txt";
+    let username = "example_user";
+    let password = "example_password";
+    let instrument_id = "example_instrument";
+    let max_position = 3;
+
+    // Example of creating the YDApi instance and the listener, then starting the API.
+    let api = YDApi::create(&config_filename);
+    let listener = Example1Listener::new(api, username, password, instrument_id, max_position);
+
+    if !api.start(listener) {
+        println!("Failed to start YDApi.");
+    }
+}
