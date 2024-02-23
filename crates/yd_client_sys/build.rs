@@ -11,20 +11,19 @@ fn main() {
         _ => panic!("Unsupported OS"),
     };
 
-    let project_dir = env::current_dir().unwrap();
-    let lib_path = project_dir.join("ydClient").join("ydAPI_c++").join(lib_dir);
+    let third_party_project_dir = env::current_dir().unwrap().join("thirdparty");
+    let lib_path = third_party_project_dir.join("ydClient").join("ydAPI_c++").join(lib_dir);
     assert!(lib_path.exists(), "Library path does not exist: {:?}", lib_path);
 
     println!("cargo:rustc-link-search=native={}", lib_path.display());
-    // Ensure the dynamic linker can find the library at runtime without needing to set LD_LIBRARY_PATH
     println!("cargo:rustc-link-arg=-Wl,-rpath,{}", lib_path.display());
-
-    // Link against the `yd` library
     println!("cargo:rustc-link-lib=dylib=yd");
+
+    let wrapper_header_path = third_party_project_dir.join("wrapper.hpp").to_str().expect("Path to string conversion failed").to_owned();
 
     // Generate bindings using bindgen
     let bindings = bindgen::Builder::default()
-        .header("wrapper.hpp")
+        .header(wrapper_header_path)
         .clang_arg("-x")
         .clang_arg("c++")
         .clang_arg("-std=c++11")

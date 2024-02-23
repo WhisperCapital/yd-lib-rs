@@ -107,11 +107,3 @@ pub fn gb18030_cstr_to_str(v: &[u8]) -> Cow<str> {
         Err(e) => e,
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {}
-}

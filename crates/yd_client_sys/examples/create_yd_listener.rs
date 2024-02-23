@@ -4,10 +4,10 @@ use std::os::raw::c_char;
 use std::ptr::null;
 
 // Assuming `yd_lib_rs` is a Rust crate that provides FFI bindings to the YDApi C++ library.
-use yd_lib_rs::{YDApi, YDListener, YDInstrument, YDAccountInstrumentInfo, YDPrePosition, YDMarketData, YDOrder, YDTrade, YDInputOrder, YDCancelOrder};
+use yd_lib_rs::{create_yd_api, YDAccountInstrumentInfo, YDApi, YDCancelOrder, YDInputOrder, YDInstrument, YDListener, YDMarketData, YDOrder, YDPrePosition, YDTrade};
 
 // Define the Rust listener that implements `YDListener`. This struct will handle callbacks from the YDApi.
-struct Example1Listener {
+struct YDExample1Listener {
     api: YDApi,
     username: CString,
     password: CString,
@@ -17,7 +17,7 @@ struct Example1Listener {
     has_order: bool,
 }
 
-impl Example1Listener {
+impl YDExample1Listener {
     fn new(api: YDApi, username: &str, password: &str, instrument_id: &str, max_position: i32) -> Self {
         Self {
             api,
@@ -31,7 +31,7 @@ impl Example1Listener {
     }
 }
 
-impl YDListener for Example1Listener {
+impl YDExample1Listener {
   fn notify_ready_for_login(&mut self, has_login_failed: bool) {
       if has_login_failed {
           println!("Previous login attempt failed, retrying...");
@@ -91,8 +91,7 @@ fn main() {
     let max_position = 3;
 
     // Example of creating the YDApi instance and the listener, then starting the API.
-    let api = YDApi::create(&config_filename);
-    let listener = Example1Listener::new(api, username, password, instrument_id, max_position);
+    let api = create_yd_api(&config_filename);
 
     if !api.start(listener) {
         println!("Failed to start YDApi.");
