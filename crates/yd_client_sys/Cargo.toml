@@ -11,3 +11,6 @@ tokio = { version = "1", features = ["full"] }
 
 [build-dependencies]
 bindgen = "0.69.4"
+clang = "2.0.0"
+clang-sys = { version = "1", features = ["clang_6_0", "runtime"] }
+lazy_static = "1.4.0"
