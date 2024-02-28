@@ -43,8 +43,7 @@ pub fn handle_record(
         r#"
 #[repr(C)]
 #[derive(Debug)]
-struct {vtable_struct_name} {{
-"#
+struct {vtable_struct_name} {{"#
     ));
     lines.extend(process_children(
         entity,
@@ -59,8 +58,62 @@ struct {vtable_struct_name} {{
     // end virtual tables
     // next are spi output enum
     let full_spi_output_enum_name = format!("{full_rust_struct_name}Output");
+    lines.push(format!(
+        r#"
+#[derive(Clone, Debug)]
+pub enum {full_spi_output_enum_name} {{"#
+    ));
+    lines.extend(process_children(
+        entity,
+        handlers,
+        &mut HandlerConfigs {
+            // ask function handler to output v-table struct style code
+            method_flavor: MethodFlavor::OutputEnum,
+            ..configs.clone()
+        },
+    ));
+    lines.push("}".to_string());
+    // end spi output enum
+    // next are output enum struct
+    lines.extend(process_children(
+        entity,
+        handlers,
+        &mut HandlerConfigs {
+            // ask function handler to output v-table struct style code
+            method_flavor: MethodFlavor::OutputEnumStruct,
+            ..configs.clone()
+        },
+    ));
+    // end output enum struct
+    // next are static table
     let full_static_vtable_var_name =
         Inflector::to_snake_case(&full_rust_struct_name).to_uppercase() + "_VTABLE";
+    lines.push(format!(
+        r#"
+static {full_static_vtable_var_name}: {vtable_struct_name} = {vtable_struct_name} {{"#
+    ));
+    lines.extend(process_children(
+        entity,
+        handlers,
+        &mut HandlerConfigs {
+            // ask function handler to output v-table struct style code
+            method_flavor: MethodFlavor::StaticTable,
+            ..configs.clone()
+        },
+    ));
+    lines.push("}".to_string());
+    // end static table
+    // next are c fn
+    lines.extend(process_children(
+        entity,
+        handlers,
+        &mut HandlerConfigs {
+            // ask function handler to output v-table struct style code
+            method_flavor: MethodFlavor::CFn,
+            ..configs.clone()
+        },
+    ));
+    // end c fn
 
     lines
 }

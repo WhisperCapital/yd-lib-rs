@@ -11,6 +11,10 @@ pub enum MethodFlavor {
     Struct,
     /// method is in a trait
     Trait,
+    StaticTable,
+    OutputEnum,
+    OutputEnumStruct,
+    CFn,
     /// only add debug log
     None,
 }
@@ -24,7 +28,7 @@ pub fn handle_function_prototype(
 
     let mut lines: Vec<String> = vec![];
     // get arg from child node if possible
-    let child_lines = process_children(
+    let child_lines_rs = process_children(
         entity,
         handlers,
         &mut HandlerConfigs {
@@ -37,7 +41,7 @@ pub fn handle_function_prototype(
         MethodFlavor::Trait => {
             let formatted_line = format!(
                 "fn {snake_fn_name}(&mut self{}) {{}}\n",
-                child_lines.join(", ")
+                child_lines_rs.join(", ")
             );
             lines.push(formatted_line);
         }
@@ -45,7 +49,60 @@ pub fn handle_function_prototype(
             let formatted_line = format!(
                 r#"{snake_fn_name}: extern "C" fn(spi: *mut {}Fat{}) ,"#,
                 configs.record_name,
-                child_lines.join(", ")
+                child_lines_rs.join(", ")
+            );
+            lines.push(formatted_line);
+        }
+        MethodFlavor::StaticTable => {
+            let formatted_line = format!(r#"{snake_fn_name}: spi_{snake_fn_name},"#,);
+            lines.push(formatted_line);
+        }
+        MethodFlavor::OutputEnum => {
+            let formatted_line = format!(
+                r#"{snake_fn_name}({}{snake_fn_name}Packet),"#,
+                configs.record_name
+            );
+            lines.push(formatted_line);
+        }
+        MethodFlavor::OutputEnumStruct => {
+            lines.push(format!(
+                r#"
+#[derive(Clone, Debug)]
+pub struct {}{snake_fn_name}Packet {{
+"#,
+                configs.record_name
+            ));
+            lines.extend(
+                child_lines_rs
+                    .iter()
+                    .map(|arg| format!("pub {},", arg.replace("&", "").clone())),
+            );
+            lines.push(format!(
+                r#"
+}}"#
+            ));
+        }
+        MethodFlavor::CFn => {
+            let child_lines_c = process_children(
+                entity,
+                handlers,
+                &mut HandlerConfigs {
+                    // ask function handler to output trait style code
+                    parameter_flavor: ParameterFlavor::C,
+                    ..configs.clone()
+                },
+            );
+            let formatted_line = format!(
+                r#"extern "C" fn spi_{}(spi: *mut {}Fat, {}) {{
+                    unsafe {{
+                        (*(*spi).md_spi_ptr).{}({})
+                    }}
+                }}"#,
+                snake_fn_name,
+                configs.record_name,
+                child_lines_rs.join(","),
+                snake_fn_name,
+                child_lines_c.join(","),
             );
             lines.push(formatted_line);
         }
