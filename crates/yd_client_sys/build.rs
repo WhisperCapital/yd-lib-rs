@@ -7,7 +7,7 @@ mod build_utils;
 
 use build_utils::create_handlers;
 
-use crate::build_utils::{process_children, Handler};
+use crate::build_utils::{process_children, HandlerConfigs};
 
 // 路径常量
 lazy_static! {
@@ -94,13 +94,11 @@ fn generate_api_wrapper(library_header_ast: &TranslationUnit) {
 fn generate_spi_wrapper(library_header_ast: &TranslationUnit) {
     let mut file_path =
         File::create(OUT_PATH.join("spi_wrapper.rs")).expect("unable to create spi_wrapper file");
-    console_debug!(
-        "library_header_ast.get_entity() {:?}",
-        library_header_ast.get_entity()
-    );
+    console_debug!("file_path {:?}", file_path);
     let handlers = create_handlers();
     let entity = library_header_ast.get_entity();
-    let lines = process_children(&entity, &handlers);
+    let mut configs = HandlerConfigs::default();
+    let lines = process_children(&entity, &handlers, &mut configs);
     let file_content = lines.join("\n");
     file_path
         .write(file_content.as_bytes())
