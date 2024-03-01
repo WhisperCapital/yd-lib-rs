@@ -15,6 +15,7 @@ pub enum MethodFlavor {
     OutputEnum,
     OutputEnumStruct,
     CFn,
+    SpiFn,
     /// only add debug log
     None,
 }
@@ -104,6 +105,40 @@ pub struct {}{snake_fn_name}Packet {{
                 snake_fn_name,
                 child_lines_c.join(","),
             );
+            lines.push(formatted_line);
+        }
+        MethodFlavor::SpiFn => {
+            let child_lines_c = process_children(
+                entity,
+                handlers,
+                &mut HandlerConfigs {
+                    // ask function handler to output trait style code
+                    parameter_flavor: ParameterFlavor::C,
+                    ..configs.clone()
+                },
+            );
+            let trait_line_front = format!(
+                "fn {snake_fn_name}(&mut self{}) \n",
+                child_lines_rs.join(", ")
+            );
+            let full_spi_output_enum_name = format!("{}Output", configs.record_name);
+
+            let formatted_line = format!(
+                r#"{trait_line_front} {{
+            self.inner.lock().unwrap().push({})
+                }}
+            "#,
+                format!(
+                    r#"{full_spi_output_enum_name}::{snake_fn_name}( {}{snake_fn_name}Packet {{
+"#,
+                    configs.record_name,
+                )
+            );
+            lines.extend(child_lines_rs);
+            lines.push(format!(
+                r#"
+}}"#
+            ));
             lines.push(formatted_line);
         }
         MethodFlavor::None => {
