@@ -28,7 +28,7 @@ cargo run -p yd_client_sys --example create_yd_listener
 
 ### 开发容器
 
-由于 yd 无法在 Mac 下运行，要不是使用[开发机](https://questerai.feishu.cn/wiki/V9KTwpefBi5oVwkPNrfc1i4jnUb)，要不就是用 Linux 开发容器。
+由于 yd 无法在 Mac 下运行，要不是使用[开发机](https://questerai.feishu.cn/wiki/V9KTwpefBi5oVwkPNrfc1i4jnUb)，要不就是用 Linux 开发容器。而且由于开发容器的 bug，需要用很慢的 osxfs (Legacy)，不能用 VirtioFS。
 
 用 VSCode 左下角的 >< 远程主机按钮，打开菜单选择「在容器内重新打开文件夹」。
 
