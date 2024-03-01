@@ -1,0 +1,6 @@
+FROM core.image-registry.apricottavern.site/infra/rust-image-dev-box:latest
+
+RUN mkdir -p /root/repo/yd-lib-rs
+WORKDIR /root/repo/yd-lib-rs
+# mount the repo with
+# docker run -v $(pwd):/root/repo/yd-lib-rs -it yd-lib-rs-dev
