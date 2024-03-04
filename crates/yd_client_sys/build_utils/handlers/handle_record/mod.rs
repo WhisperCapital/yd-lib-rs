@@ -4,7 +4,7 @@ use crate::build_utils::{
 use clang::*;
 
 pub mod spi;
-use spi::*;
+use spi::handle_spi_record;
 
 #[derive(Clone)]
 pub enum RecordFlavor {
@@ -26,52 +26,8 @@ pub fn handle_record(
         entity.get_display_name().unwrap_or_default()
     )];
     let full_rust_struct_name = get_full_name_of_entity(&entity);
-    if full_rust_struct_name != "YDListener" {
-        return lines;
+    if full_rust_struct_name == "YDListener" {
+        lines.extend(handle_spi_record(entity, handlers, configs, &full_rust_struct_name));
     }
-    let vtable_struct_name = format!("{full_rust_struct_name}VTable");
-    let full_trait_name = format!("{full_rust_struct_name}_trait");
-
-    lines.extend(handle_trait(
-        entity,
-        handlers,
-        configs,
-        &full_rust_struct_name,
-        &full_trait_name,
-    ));
-    lines.extend(handle_vtable(
-        entity,
-        handlers,
-        configs,
-        &full_rust_struct_name,
-        &vtable_struct_name,
-    ));
-    lines.extend(handle_spi_output_enum(
-        entity,
-        handlers,
-        configs,
-        &full_rust_struct_name,
-    ));
-    lines.extend(handle_output_enum_struct(entity, handlers, configs));
-    lines.extend(handle_static_table(
-        entity,
-        handlers,
-        configs,
-        &full_rust_struct_name,
-    ));
-    lines.extend(handle_c_fn(entity, handlers, configs));
-    lines.push(handle_fat_spi(
-        entity,
-        handlers,
-        configs,
-        &full_rust_struct_name,
-        &vtable_struct_name,
-        &full_trait_name,
-    ));
-    lines.push(handle_spi_stream_code(
-        &full_rust_struct_name,
-        &format!("{full_rust_struct_name}Output"),
-    ));
-
     lines
 }

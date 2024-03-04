@@ -5,6 +5,61 @@ use crate::build_utils::{
     config::HandlerConfigs, handle_function_prototype::MethodFlavor, process_children, HandlerMap,
 };
 
+pub fn handle_spi_record(
+    entity: &Entity,
+    handlers: &HandlerMap,
+    configs: &mut HandlerConfigs,
+    full_rust_struct_name: &str,
+) -> Vec<String> {
+    let mut lines: Vec<String> = Vec::new();
+    let vtable_struct_name = format!("{full_rust_struct_name}VTable");
+    let full_trait_name = format!("{full_rust_struct_name}_trait");
+
+    lines.extend(handle_trait(
+        entity,
+        handlers,
+        configs,
+        full_rust_struct_name,
+        &full_trait_name,
+    ));
+    lines.extend(handle_vtable(
+        entity,
+        handlers,
+        configs,
+        full_rust_struct_name,
+        &vtable_struct_name,
+    ));
+    lines.extend(handle_spi_output_enum(
+        entity,
+        handlers,
+        configs,
+        full_rust_struct_name,
+    ));
+    lines.extend(handle_output_enum_struct(entity, handlers, configs));
+    lines.extend(handle_static_table(
+        entity,
+        handlers,
+        configs,
+        full_rust_struct_name,
+    ));
+    lines.extend(handle_c_fn(entity, handlers, configs));
+    lines.push(handle_fat_spi(
+        entity,
+        handlers,
+        configs,
+        full_rust_struct_name,
+        &vtable_struct_name,
+        &full_trait_name,
+    ));
+    lines.push(handle_spi_stream_code(
+        full_rust_struct_name,
+        &format!("{full_rust_struct_name}Output"),
+    ));
+
+    lines
+}
+
+
 pub fn handle_trait(
     entity: &Entity,
     handlers: &HandlerMap,
