@@ -22,7 +22,7 @@ pub fn handle_record(
     configs: &mut HandlerConfigs,
 ) -> Vec<String> {
     let mut lines: Vec<String> = vec![format!(
-        "// Record: {}",
+        "// Record: {}\n",
         entity.get_display_name().unwrap_or_default()
     )];
     let full_rust_struct_name = get_full_name_of_entity(&entity);

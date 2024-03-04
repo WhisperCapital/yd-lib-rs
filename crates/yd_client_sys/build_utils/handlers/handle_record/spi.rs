@@ -68,7 +68,7 @@ pub fn handle_trait(
     full_trait_name: &str,
 ) -> Vec<String> {
     let mut lines = Vec::new();
-    lines.push(format!(r#"pub trait {full_trait_name}: Send {{"#));
+    lines.push(format!("pub trait {full_trait_name}: Send {{\n"));
     lines.extend(process_children(
         entity,
         handlers,
@@ -77,7 +77,7 @@ pub fn handle_trait(
             ..configs.clone()
         },
     ));
-    lines.push("}".to_string());
+    lines.push("}\n".to_string());
     lines
 }
 
@@ -93,7 +93,8 @@ pub fn handle_vtable(
         r#"
 #[repr(C)]
 #[derive(Debug)]
-struct {vtable_struct_name} {{"#
+struct {vtable_struct_name} {{
+"#
     ));
     lines.extend(process_children(
         entity,
@@ -103,7 +104,7 @@ struct {vtable_struct_name} {{"#
             ..configs.clone()
         },
     ));
-    lines.push("}".to_string());
+    lines.push("}\n".to_string());
     lines
 }
 
@@ -118,7 +119,8 @@ pub fn handle_spi_output_enum(
     lines.push(format!(
         r#"
 #[derive(Clone, Debug)]
-pub enum {full_spi_output_enum_name} {{"#
+pub enum {full_spi_output_enum_name} {{
+"#
     ));
     lines.extend(process_children(
         entity,
@@ -128,7 +130,7 @@ pub enum {full_spi_output_enum_name} {{"#
             ..configs.clone()
         },
     ));
-    lines.push("}".to_string());
+    lines.push("}\n".to_string());
     lines
 }
 
@@ -159,7 +161,8 @@ pub fn handle_static_table(
     let vtable_struct_name = format!("{full_rust_struct_name}VTable");
     lines.push(format!(
         r#"
-static {full_static_vtable_var_name}: {vtable_struct_name} = {vtable_struct_name} {{"#
+static {full_static_vtable_var_name}: {vtable_struct_name} = {vtable_struct_name} {{
+"#
     ));
     lines.extend(process_children(
         entity,
@@ -169,7 +172,7 @@ static {full_static_vtable_var_name}: {vtable_struct_name} = {vtable_struct_name
             ..configs.clone()
         },
     ));
-    lines.push("}".to_string());
+    lines.push("}\n".to_string());
     lines
 }
 
@@ -283,7 +286,7 @@ pub fn handle_spi_fn(
 ) -> Vec<String> {
   let mut lines = Vec::new();
   lines.push(format!(
-    r#"impl {full_trait_name} for {full_rust_struct_name}Stream {{"#,
+    "impl {full_trait_name} for {full_rust_struct_name}Stream {{\n",
   ));
   lines.extend(process_children(
       entity,
@@ -293,6 +296,6 @@ pub fn handle_spi_fn(
           ..configs.clone()
       },
   ));
-  lines.push("}".to_string());
+  lines.push("}\n".to_string());
   lines
 }
