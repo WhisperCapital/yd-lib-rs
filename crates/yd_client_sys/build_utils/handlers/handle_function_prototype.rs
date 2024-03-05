@@ -58,7 +58,7 @@ pub fn handle_function_prototype(
             lines.push(format!(" ),\n"));
         }
         MethodFlavor::StaticTable => {
-            lines.push(format!(r"{snake_fn_name}: spi_{snake_fn_name},\n"));
+            lines.push(format!("{}{snake_fn_name}: spi_{snake_fn_name},\n", *INDENT));
         }
         MethodFlavor::OutputEnum => {
             lines.push(format!(
@@ -76,7 +76,7 @@ pub struct {record_name}{snake_fn_name}Packet {{
             lines.extend(
                 child_lines_rs
                     .iter()
-                    .map(|arg| format!("{}pub {},\n", arg.replace("&", "").clone(), *INDENT)),
+                    .map(|arg| format!("{}pub {},\n", *INDENT, arg.replace("&", "").clone())),
             );
             lines.push(format!("}}\n"));
         }
@@ -91,13 +91,14 @@ pub struct {record_name}{snake_fn_name}Packet {{
                 },
             );
             lines.push(format!(
-                r#"extern "C" fn spi_{snake_fn_name}(spi: *mut {record_name}Fat"#
+                r#"
+extern "C" fn spi_{snake_fn_name}(spi: *mut {record_name}Fat"#
             ));
             lines.extend(child_lines_rs);
             lines.push(format!(
                 r#") {{
-                unsafe {{
-                    (*(*spi).md_spi_ptr).{snake_fn_name}("#,
+    unsafe {{
+        (*(*spi).md_spi_ptr).{snake_fn_name}("#,
             ));
             lines.extend(child_lines_c);
             lines.push(format!(

@@ -72,7 +72,7 @@ pub fn handle_function_parameter(
 fn format_parameter(name: &str, parameter: &str, flavor: &ParameterFlavor) -> String {
     match flavor {
         ParameterFlavor::C => format!(r#", {}{}"#, name, parameter),
-        ParameterFlavor::Rust => format!(", {}: {}", name, parameter),
+        ParameterFlavor::Rust => format!("{}: {}", name, parameter),
         ParameterFlavor::None => format!("/* Param: {} */", name),
     }
 }
