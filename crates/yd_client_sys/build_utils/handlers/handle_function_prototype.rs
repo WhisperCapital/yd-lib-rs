@@ -67,17 +67,22 @@ pub fn handle_function_prototype(
             ));
         }
         MethodFlavor::OutputEnumStruct => {
+            let child_lines_rs_struct = process_children(
+                entity,
+                handlers,
+                &mut HandlerConfigs {
+                    // ask function handler to output trait style code
+                    parameter_flavor: ParameterFlavor::RustStruct,
+                    ..configs.clone()
+                },
+            );
             lines.push(format!(
                 r#"
 #[derive(Clone, Debug)]
 pub struct {record_name}{snake_fn_name}Packet {{
 "#
             ));
-            lines.extend(
-                child_lines_rs
-                    .iter()
-                    .map(|arg| format!("{}pub {},\n", *INDENT, arg.replace("&", "").clone())),
-            );
+            lines.extend(child_lines_rs_struct);
             lines.push(format!("}}\n"));
         }
         MethodFlavor::CFn => {

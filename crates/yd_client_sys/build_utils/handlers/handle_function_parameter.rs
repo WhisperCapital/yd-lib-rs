@@ -4,12 +4,18 @@ use crate::build_utils::{
 use clang::*;
 use inflector::Inflector;
 
+lazy_static! {
+    static ref INDENT: String = "    ".to_string();
+}
+
 #[derive(Clone)]
 pub enum ParameterFlavor {
     /// return c style parameter code
     C,
     /// return rust style parameter code
     Rust,
+    /// each param as field in rust struct
+    RustStruct,
     /// only add debug log
     None,
 }
@@ -73,6 +79,7 @@ pub fn handle_function_parameter(
     } else {
         match configs.parameter_flavor {
             ParameterFlavor::None => vec!["/* ,*/".to_string(), parameter_str],
+            ParameterFlavor::RustStruct => vec![parameter_str, ",\n".to_string()],
             _ => vec![", ".to_string(), parameter_str],
         }
     }
@@ -82,6 +89,7 @@ fn format_parameter(name: &str, parameter: &str, flavor: &ParameterFlavor) -> St
     match flavor {
         ParameterFlavor::C => format!("{}{}", name, parameter),
         ParameterFlavor::Rust => format!("{}: {}", name, parameter),
+        ParameterFlavor::RustStruct => format!("{}pub {}: {}", *INDENT, name, parameter),
         ParameterFlavor::None => format!("/* Param: {} */", name),
     }
 }
@@ -91,7 +99,7 @@ fn get_pointer_types(entity_type: &Type, flavor: &ParameterFlavor) -> String {
     match pointee_type.get_kind() {
         TypeKind::CharS => match flavor {
             ParameterFlavor::C => " as *const i8".to_string(),
-            ParameterFlavor::Rust => "std::ffi::CString".to_string(),
+            ParameterFlavor::Rust | ParameterFlavor::RustStruct => "std::ffi::CString".to_string(),
             ParameterFlavor::None => "/* char* */".to_string(),
         },
         TypeKind::Pointer => {
@@ -99,7 +107,9 @@ fn get_pointer_types(entity_type: &Type, flavor: &ParameterFlavor) -> String {
             match inner_type.get_kind() {
                 TypeKind::CharS => match flavor {
                     ParameterFlavor::C => ".to_char_pp()".to_string(),
-                    ParameterFlavor::Rust => "Vec<std::ffi::CString>".to_string(),
+                    ParameterFlavor::Rust | ParameterFlavor::RustStruct => {
+                        "Vec<std::ffi::CString>".to_string()
+                    }
                     ParameterFlavor::None => "/* char** */".to_string(),
                 },
                 _ => panic!("Unhandled pointer to pointer type"),
@@ -111,6 +121,7 @@ fn get_pointer_types(entity_type: &Type, flavor: &ParameterFlavor) -> String {
                 match flavor {
                     ParameterFlavor::C => format!(" as *mut {}", type_name),
                     ParameterFlavor::Rust => format!("&mut {}", type_name),
+                    ParameterFlavor::RustStruct => format!("mut {}", type_name),
                     ParameterFlavor::None => format!("/* {} */", type_name),
                 }
             } else {
@@ -130,7 +141,9 @@ fn get_typedef_types(entity_type: &Type, flavor: &ParameterFlavor) -> String {
     match underlying_type.get_kind() {
         TypeKind::CharS => match flavor {
             ParameterFlavor::C => "".to_string(),
-            ParameterFlavor::Rust => "std::os::raw::c_char".to_string(),
+            ParameterFlavor::Rust | ParameterFlavor::RustStruct => {
+                "std::os::raw::c_char".to_string()
+            }
             ParameterFlavor::None => "/* c_char */".to_string(),
         },
         _ => panic!("Unhandled typedef"),
