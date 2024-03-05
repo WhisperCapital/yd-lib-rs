@@ -94,7 +94,7 @@ pub fn handle_function_parameter(
 
 fn format_parameter(name: &str, parameter: &str, flavor: &ParameterFlavor) -> String {
     match flavor {
-        ParameterFlavor::C => format!("{}: {}", name, parameter),
+        ParameterFlavor::C => format!("{}", name),
         ParameterFlavor::Rust => format!("{}: {}", name, parameter),
         ParameterFlavor::RustStruct => format!("{}pub {}: {}", *INDENT, name, parameter),
         ParameterFlavor::None => format!("/* Param: {} */", name),
