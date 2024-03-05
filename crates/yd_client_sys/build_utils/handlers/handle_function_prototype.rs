@@ -55,7 +55,7 @@ pub fn handle_function_prototype(
                 *INDENT
             ));
             lines.extend(child_lines_rs);
-            lines.push(format!(" ),\n"));
+            lines.push(format!("),\n"));
         }
         MethodFlavor::StaticTable => {
             lines.push(format!("{}{snake_fn_name}: spi_{snake_fn_name},\n", *INDENT));

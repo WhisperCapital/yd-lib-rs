@@ -39,18 +39,20 @@ pub fn process_children(
     configs: &mut HandlerConfigs,
 ) -> Vec<String> {
     let mut lines: Vec<String> = Vec::new();
-
+    let mut current_child_index: usize = 0;
+    configs.num_parent_children = entity.get_children().len().try_into().unwrap_or(0);
     entity.visit_children(|child, _| {
         if let Some(handler) = child
             .get_type()
             .and_then(|node_type| handlers.get(&node_type.get_kind()))
         {
+            configs.index = current_child_index;
             match handler {
-                Handler::Record(h) => lines.extend(h(&child, handlers, configs)), // Corrected line
-                Handler::FunctionPrototype(h) => lines.extend(h(&child, handlers, configs)), // Ensure this line is also corrected
-                                                                                             // Handle other types as needed
+                Handler::Record(h) => lines.extend(h(&child, handlers, configs)),
+                Handler::FunctionPrototype(h) => lines.extend(h(&child, handlers, configs)),
             }
         }
+        current_child_index += 1;
         EntityVisitResult::Continue
     });
 

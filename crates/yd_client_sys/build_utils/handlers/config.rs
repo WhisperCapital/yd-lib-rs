@@ -9,6 +9,10 @@ pub struct HandlerConfigs {
     pub parameter_flavor: ParameterFlavor,
     pub record_flavor: RecordFlavor,
     pub record_name: String,
+    /// the index of this child in its parent
+    pub index: usize,
+    /// how many children does the parent have
+    pub num_parent_children: usize,
 }
 
 impl Default for HandlerConfigs {
@@ -18,6 +22,8 @@ impl Default for HandlerConfigs {
             parameter_flavor: ParameterFlavor::None,
             record_flavor: RecordFlavor::None,
             record_name: "DefaultName".to_string(),
+            index: 0,
+            num_parent_children: 0,
         }
     }
 }

@@ -66,12 +66,21 @@ pub fn handle_function_parameter(
         }
     };
 
-    vec![parameter_str]
+    let is_last_child =
+        configs.num_parent_children <= 1 || configs.index == configs.num_parent_children - 1;
+    if is_last_child {
+        vec![parameter_str]
+    } else {
+        match configs.parameter_flavor {
+            ParameterFlavor::None => vec!["/* ,*/".to_string(), parameter_str],
+            _ => vec![", ".to_string(), parameter_str],
+        }
+    }
 }
 
 fn format_parameter(name: &str, parameter: &str, flavor: &ParameterFlavor) -> String {
     match flavor {
-        ParameterFlavor::C => format!(r#", {}{}"#, name, parameter),
+        ParameterFlavor::C => format!("{}{}", name, parameter),
         ParameterFlavor::Rust => format!("{}: {}", name, parameter),
         ParameterFlavor::None => format!("/* Param: {} */", name),
     }
