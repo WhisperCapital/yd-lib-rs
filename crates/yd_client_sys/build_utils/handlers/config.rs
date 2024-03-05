@@ -11,8 +11,8 @@ pub struct HandlerConfigs {
     pub record_name: String,
     /// the index of this child in its parent
     pub index: usize,
-    /// how many children does the parent have
-    pub num_parent_children: usize,
+    /// how many children does the parent have, only count children with same type (and processed by same handler)
+    pub num_parent_children_same_handler: usize,
 }
 
 impl Default for HandlerConfigs {
@@ -23,7 +23,7 @@ impl Default for HandlerConfigs {
             record_flavor: RecordFlavor::None,
             record_name: "DefaultName".to_string(),
             index: 0,
-            num_parent_children: 0,
+            num_parent_children_same_handler: 0,
         }
     }
 }

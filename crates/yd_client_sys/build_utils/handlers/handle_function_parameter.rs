@@ -72,22 +72,29 @@ pub fn handle_function_parameter(
         }
     };
 
-    let is_last_child =
-        configs.num_parent_children <= 1 || configs.index == configs.num_parent_children - 1;
-    if is_last_child {
+    let is_only_child = configs.num_parent_children_same_handler == 1;
+    let is_first_child = configs.index == 0;
+    let is_last_child = configs.index == configs.num_parent_children_same_handler - 1;
+    if is_only_child {
         vec![parameter_str]
     } else {
         match configs.parameter_flavor {
             ParameterFlavor::None => vec!["/* ,*/".to_string(), parameter_str],
             ParameterFlavor::RustStruct => vec![parameter_str, ",\n".to_string()],
-            _ => vec![", ".to_string(), parameter_str],
+            _ => {
+                if is_first_child {
+                    vec![parameter_str]
+                } else {
+                    vec![", ".to_string(), parameter_str]
+                }
+            }
         }
     }
 }
 
 fn format_parameter(name: &str, parameter: &str, flavor: &ParameterFlavor) -> String {
     match flavor {
-        ParameterFlavor::C => format!("{}{}", name, parameter),
+        ParameterFlavor::C => format!("{}: {}", name, parameter),
         ParameterFlavor::Rust => format!("{}: {}", name, parameter),
         ParameterFlavor::RustStruct => format!("{}pub {}: {}", *INDENT, name, parameter),
         ParameterFlavor::None => format!("/* Param: {} */", name),
@@ -140,7 +147,7 @@ fn get_typedef_types(entity_type: &Type, flavor: &ParameterFlavor) -> String {
 
     match underlying_type.get_kind() {
         TypeKind::CharS => match flavor {
-            ParameterFlavor::C => "".to_string(),
+            ParameterFlavor::C => "/* c_char */".to_string(),
             ParameterFlavor::Rust | ParameterFlavor::RustStruct => {
                 "std::os::raw::c_char".to_string()
             }

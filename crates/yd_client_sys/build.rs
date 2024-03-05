@@ -99,7 +99,7 @@ fn generate_spi_wrapper(library_header_ast: &TranslationUnit) {
     let entity = library_header_ast.get_entity();
     let mut configs = HandlerConfigs::default();
     let lines = process_children(&entity, &handlers, &mut configs);
-    let file_content = lines.join(r#""#);
+    let file_content = lines.join("");
     file_path
         .write(file_content.as_bytes())
         .expect("Failed to write to spi_wrapper.rs");

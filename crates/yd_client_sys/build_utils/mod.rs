@@ -33,6 +33,32 @@ pub fn create_handlers() -> HandlerMap {
     handlers
 }
 
+fn get_handler<'a>(entity: &'a Entity<'a>, handlers: &'a HandlerMap) -> Option<&'a Handler> {
+    entity
+        .get_type()
+        .and_then(|node_type| handlers.get(&node_type.get_kind()))
+}
+
+fn count_children_with_same_handler(
+    entity: &Entity,
+    child_handler: &Handler,
+    handlers: &HandlerMap,
+) -> usize {
+    entity
+        .get_children()
+        .into_iter()
+        .filter(|c| {
+            get_handler(c, handlers).map_or(false, |c_handler| {
+                matches!(
+                    (c_handler, child_handler),
+                    (Handler::Record(_), Handler::Record(_))
+                        | (Handler::FunctionPrototype(_), Handler::FunctionPrototype(_))
+                )
+            })
+        })
+        .count()
+}
+
 pub fn process_children(
     entity: &Entity,
     handlers: &HandlerMap,
@@ -40,14 +66,14 @@ pub fn process_children(
 ) -> Vec<String> {
     let mut lines: Vec<String> = Vec::new();
     let mut current_child_index: usize = 0;
-    configs.num_parent_children = entity.get_children().len().try_into().unwrap_or(0);
     entity.visit_children(|child, _| {
-        if let Some(handler) = child
-            .get_type()
-            .and_then(|node_type| handlers.get(&node_type.get_kind()))
-        {
+        if let Some(child_handler) = get_handler(&child, handlers) {
+            configs.num_parent_children_same_handler =
+                count_children_with_same_handler(entity, child_handler, handlers)
+                    .try_into()
+                    .unwrap_or(0);
             configs.index = current_child_index;
-            match handler {
+            match child_handler {
                 Handler::Record(h) => lines.extend(h(&child, handlers, configs)),
                 Handler::FunctionPrototype(h) => lines.extend(h(&child, handlers, configs)),
             }

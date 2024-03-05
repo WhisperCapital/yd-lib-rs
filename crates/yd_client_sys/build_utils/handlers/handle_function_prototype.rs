@@ -54,6 +54,9 @@ pub fn handle_function_prototype(
                 r#"{}{snake_fn_name}: extern "C" fn(spi: *mut {record_name}Fat"#,
                 *INDENT
             ));
+            if !child_lines_rs.is_empty() {
+                lines.push(format!(", "));
+            }
             lines.extend(child_lines_rs);
             lines.push(format!("),\n"));
         }
@@ -99,6 +102,9 @@ pub struct {record_name}{snake_fn_name}Packet {{
                 r#"
 extern "C" fn spi_{snake_fn_name}(spi: *mut {record_name}Fat"#
             ));
+            if !child_lines_rs.is_empty() {
+                lines.push(format!(", "));
+            }
             lines.extend(child_lines_rs);
             lines.push(format!(
                 r#") {{
