@@ -132,23 +132,24 @@ extern "C" fn spi_{snake_fn_name}(spi: *mut {record_name}Fat"#
                     ..configs.clone()
                 },
             );
-            let trait_line_front = format!(
-                "fn {snake_fn_name}(&mut self{}) \n",
-                child_lines_rs.join(", ")
-            );
-            let full_spi_output_enum_name = format!("{record_name}Output");
-            let mut pushed_lines: Vec<String> = vec![];
-            pushed_lines.push(format!(
-                "{full_spi_output_enum_name}::{snake_fn_name}( {packet_name}Packet {{\n"
-            ));
-            pushed_lines.extend(child_lines_rs);
-            pushed_lines.push(format!("}}\n"));
+            lines.push(format!("{}fn {snake_fn_name}(&mut self", *INDENT,));
+            if !child_lines_rs.is_empty() {
+                lines.push(format!(", "));
+            }
+            lines.extend(child_lines_rs.clone());
             lines.push(format!(
-                r#"{trait_line_front} {{
-    self.inner.lock().unwrap().push("#
+                r#") {{
+        self.inner.lock().unwrap().push("#
             ));
-            lines.extend(pushed_lines);
-            lines.push(format!(")\n}}"));
+            lines.push(format!(
+                "{full_spi_output_enum_name}::{snake_fn_name}({packet_name}Packet {{\n",
+                full_spi_output_enum_name = format!("{record_name}Output")
+            ));
+            lines.extend(child_lines_rs);
+            lines.push(format!(
+                "{indent}{indent}}}))\n{indent}}}\n",
+                indent = *INDENT
+            ));
         }
         MethodFlavor::None => {
             lines.push(format!(
