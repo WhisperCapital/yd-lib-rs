@@ -30,9 +30,21 @@ pub fn handle_function_prototype(
     configs: &mut HandlerConfigs,
 ) -> Vec<String> {
     let camel_case_name = entity.get_name().unwrap();
-    let enum_name = format_enum_name(&camel_case_name);
-    let snake_fn_name = Inflector::to_snake_case(&camel_case_name);
     let record_name = configs.record_name.clone();
+    let sibling_index = find_previous_sibling_index(entity, configs);
+    let method_reload_suffix = if sibling_index > 0 {
+        format!("{sibling_index}")
+    } else {
+        "".to_string()
+    };
+    let snake_fn_name = format!(
+        "{}{method_reload_suffix}",
+        Inflector::to_snake_case(&camel_case_name)
+    );
+    let enum_name = format!(
+        "{}{method_reload_suffix}",
+        format_enum_name(&camel_case_name)
+    );
     let packet_name = format!("{record_name}{enum_name}Packet");
 
     let mut lines: Vec<String> = vec![];
@@ -158,4 +170,24 @@ extern "C" fn spi_{snake_fn_name}(spi: *mut {record_name}Fat"#
         }
     }
     lines
+}
+
+pub fn find_previous_sibling_index(entity: &Entity, configs: &HandlerConfigs) -> usize {
+    let current_name = entity.get_name().unwrap();
+    let mut index = 0;
+
+    if let Some(parent) = entity.get_lexical_parent() {
+        let siblings = parent.get_children();
+
+        // Ensure we only iterate up to the current entity's index as specified in configs
+        for sibling in siblings.iter().take(configs.index) {
+            if sibling.get_kind() == entity.get_kind() {
+                if sibling.get_name().unwrap() == current_name {
+                    // Increment index for each sibling with the same name found
+                    index += 1;
+                }
+            }
+        }
+    }
+    index
 }

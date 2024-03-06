@@ -21,13 +21,17 @@ pub fn handle_record(
     handlers: &HandlerMap,
     configs: &mut HandlerConfigs,
 ) -> Vec<String> {
-    let mut lines: Vec<String> = vec![format!(
-        "// Record: {}\n",
-        entity.get_display_name().unwrap_or_default()
-    )];
+    let record_name = entity.get_display_name().unwrap_or_default();
+    let mut lines: Vec<String> = vec![format!("// Record: {}\n", record_name)];
+    configs.record_name = record_name;
     let full_rust_struct_name = get_full_name_of_entity(&entity);
     if full_rust_struct_name == "YDListener" {
-        lines.extend(handle_spi_record(entity, handlers, configs, &full_rust_struct_name));
+        lines.extend(handle_spi_record(
+            entity,
+            handlers,
+            configs,
+            &full_rust_struct_name,
+        ));
     }
     lines
 }

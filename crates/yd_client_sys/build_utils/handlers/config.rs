@@ -21,7 +21,7 @@ impl Default for HandlerConfigs {
             method_flavor: MethodFlavor::None,
             parameter_flavor: ParameterFlavor::None,
             record_flavor: RecordFlavor::None,
-            record_name: "DefaultName".to_string(),
+            record_name: "WarningRecordNameUnfilled".to_string(),
             index: 0,
             num_parent_children_same_handler: 0,
         }

@@ -78,7 +78,12 @@ pub fn handle_function_parameter(
     let is_first_child = configs.index == 0;
     let is_last_child = configs.index == configs.num_parent_children_same_handler - 1;
     if is_only_child {
-        vec![parameter_str]
+        match configs.parameter_flavor {
+            ParameterFlavor::SpiFn => {
+                vec![parameter_str, ",\n".to_string()]
+            }
+            _ => vec![parameter_str],
+        }
     } else {
         match configs.parameter_flavor {
             ParameterFlavor::None => vec!["/* ,*/".to_string(), parameter_str],
