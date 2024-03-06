@@ -1,6 +1,6 @@
 use crate::build_utils::{
-    config::HandlerConfigs, handle_function_parameter::ParameterFlavor, process_children,
-    HandlerMap,
+    config::HandlerConfigs, format_name::format_enum_name,
+    handle_function_parameter::ParameterFlavor, process_children, HandlerMap,
 };
 use clang::*;
 use inflector::Inflector;
@@ -29,8 +29,11 @@ pub fn handle_function_prototype(
     handlers: &HandlerMap,
     configs: &mut HandlerConfigs,
 ) -> Vec<String> {
-    let snake_fn_name = Inflector::to_snake_case(&entity.get_name().unwrap());
+    let camel_case_name = entity.get_name().unwrap();
+    let enum_name = format_enum_name(&camel_case_name);
+    let snake_fn_name = Inflector::to_snake_case(&camel_case_name);
     let record_name = configs.record_name.clone();
+    let packet_name = format!("{record_name}{enum_name}Packet");
 
     let mut lines: Vec<String> = vec![];
     // get arg from child node if possible
@@ -61,15 +64,21 @@ pub fn handle_function_prototype(
             lines.push(format!("),\n"));
         }
         MethodFlavor::StaticTable => {
-            lines.push(format!("{}{snake_fn_name}: spi_{snake_fn_name},\n", *INDENT));
-        }
-        MethodFlavor::OutputEnum => {
             lines.push(format!(
-                "{}{snake_fn_name}({record_name}{snake_fn_name}Packet),\n",
+                "{}{snake_fn_name}: spi_{snake_fn_name},\n",
                 *INDENT
             ));
         }
+        MethodFlavor::OutputEnum => {
+            lines.push(format!("{}{enum_name}({packet_name}Packet),\n", *INDENT));
+        }
         MethodFlavor::OutputEnumStruct => {
+            lines.push(format!(
+                r#"
+#[derive(Clone, Debug)]
+pub struct {packet_name}Packet {{
+"#
+            ));
             let child_lines_rs_struct = process_children(
                 entity,
                 handlers,
@@ -79,14 +88,8 @@ pub fn handle_function_prototype(
                     ..configs.clone()
                 },
             );
-            lines.push(format!(
-                r#"
-#[derive(Clone, Debug)]
-pub struct {record_name}{snake_fn_name}Packet {{
-"#
-            ));
             lines.extend(child_lines_rs_struct);
-            lines.push(format!("}}\n"));
+            lines.push(format!("\n}}\n"));
         }
         MethodFlavor::CFn => {
             let child_lines_c = process_children(
@@ -135,7 +138,9 @@ extern "C" fn spi_{snake_fn_name}(spi: *mut {record_name}Fat"#
             );
             let full_spi_output_enum_name = format!("{record_name}Output");
             let mut pushed_lines: Vec<String> = vec![];
-            pushed_lines.push(format!("{full_spi_output_enum_name}::{snake_fn_name}( {record_name}{snake_fn_name}Packet {{\n"));
+            pushed_lines.push(format!(
+                "{full_spi_output_enum_name}::{snake_fn_name}( {packet_name}Packet {{\n"
+            ));
             pushed_lines.extend(child_lines_rs);
             pushed_lines.push(format!("}}\n"));
             lines.push(format!(
