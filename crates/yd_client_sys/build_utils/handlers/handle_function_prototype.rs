@@ -123,15 +123,6 @@ extern "C" fn spi_{snake_fn_name}(spi: *mut {record_name}Fat"#
             ));
         }
         MethodFlavor::SpiFn => {
-            let child_lines_c = process_children(
-                entity,
-                handlers,
-                &mut HandlerConfigs {
-                    // ask function handler to output trait style code
-                    parameter_flavor: ParameterFlavor::C,
-                    ..configs.clone()
-                },
-            );
             lines.push(format!("{}fn {snake_fn_name}(&mut self", *INDENT,));
             if !child_lines_rs.is_empty() {
                 lines.push(format!(", "));
@@ -145,7 +136,15 @@ extern "C" fn spi_{snake_fn_name}(spi: *mut {record_name}Fat"#
                 "{full_spi_output_enum_name}::{snake_fn_name}({packet_name}Packet {{\n",
                 full_spi_output_enum_name = format!("{record_name}Output")
             ));
-            lines.extend(child_lines_rs);
+            lines.extend(process_children(
+                entity,
+                handlers,
+                &mut HandlerConfigs {
+                    // ask function handler to output trait style code
+                    parameter_flavor: ParameterFlavor::SpiFn,
+                    ..configs.clone()
+                },
+            ));
             lines.push(format!(
                 "{indent}{indent}}}))\n{indent}}}\n",
                 indent = *INDENT

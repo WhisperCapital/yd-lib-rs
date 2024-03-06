@@ -321,6 +321,6 @@ pub fn handle_spi_fn(
             ..configs.clone()
         },
     ));
-    lines.push("}}\n".to_string());
+    lines.push("}\n".to_string());
     lines
 }
