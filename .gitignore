@@ -16,3 +16,4 @@ Cargo.lock
 .cache
 ydClient/ydAPI_c++/yd_c++_api_programming_guide.pdf
 ydClient/ydAPI_c++/yd_c++_api_programming_guide_en.pdf
+crates/yd_client_sys/src/generated/
