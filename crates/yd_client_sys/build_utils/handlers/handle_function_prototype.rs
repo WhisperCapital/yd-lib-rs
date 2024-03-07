@@ -231,7 +231,7 @@ fn get_rs_result_type_from_c_result_type(c_result_type: &str) -> String {
     match c_result_type {
         "void" => "()".to_string(),
         "int" => "std::os::raw::c_int".to_string(),
-        "bool" => "std::os::raw::c_bool".to_string(),
+        "bool" => "bool".to_string(),
         "const char *" => "*const std::os::raw::c_char".to_string(),
         "YDQueryResult<char> *" => "*const YDQueryResult".to_string(),
         _ => {

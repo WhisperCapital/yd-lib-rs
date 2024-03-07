@@ -1,6 +1,12 @@
 #![allow(unused_variables, unused_mut, dead_code)]
 use clang::*;
-use std::{env, fs::{self, File}, io::Write, path::Path, path::PathBuf};
+use std::{
+    env,
+    fs::{self, File},
+    io::Write,
+    path::Path,
+    path::PathBuf,
+};
 #[macro_use]
 extern crate lazy_static;
 mod build_utils;
@@ -89,18 +95,23 @@ fn generate_type(generated_dir: &Path) {
     // TODO: fix "expected trait, found struct `YDListener`"
 
     let file_path = generated_dir.join("bindings.rs");
-    bindings.write_to_file(&file_path).expect("Couldn't write bindings!");
+    bindings
+        .write_to_file(&file_path)
+        .expect("Couldn't write bindings!");
 }
 
 /// 生成用于主动调用的 API 的 unsafe fn wrapper，以免每次在业务代码里调用 API 都要手动写
 fn generate_api_wrapper(entity: &Entity, handlers: &HandlerMap, generated_dir: &Path) {
     let mut configs = HandlerConfigs::default();
     configs.record_flavor = build_utils::handlers::handle_record::RecordFlavor::API;
-    let lines = process_children(entity, handlers, &mut configs);
+    let mut lines: Vec<String> = Vec::new();
+    lines.push(format!("use crate::bindings::YDApi;\n\n"));
+    lines.extend(process_children(entity, handlers, &mut configs));
     let file_content = lines.join("");
     let file_path = generated_dir.join("api_wrapper.rs");
     let mut file = File::create(&file_path).expect("Unable to create api_wrapper.rs");
-    file.write_all(file_content.as_bytes()).expect("Failed to write to api_wrapper.rs");
+    file.write_all(file_content.as_bytes())
+        .expect("Failed to write to api_wrapper.rs");
 }
 
 /// 生成用于被库调用的回调函数（在 C++ 生态里称为 SPI）的 unsafe fn wrapper，以免每次在业务代码里调用 API 都要手动写
@@ -111,7 +122,8 @@ fn generate_spi_wrapper(entity: &Entity, handlers: &HandlerMap, generated_dir: &
     let file_content = lines.join("");
     let file_path = generated_dir.join("spi_wrapper.rs");
     let mut file = File::create(&file_path).expect("Unable to create spi_wrapper.rs");
-    file.write_all(file_content.as_bytes()).expect("Failed to write to spi_wrapper.rs");
+    file.write_all(file_content.as_bytes())
+        .expect("Failed to write to spi_wrapper.rs");
 
     // Debug 用，打印所有节点
     // library_header_ast.get_entity().visit_children(|e, _parent| {

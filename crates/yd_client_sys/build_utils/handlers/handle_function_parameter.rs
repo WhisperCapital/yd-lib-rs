@@ -53,11 +53,7 @@ pub fn handle_function_parameter(
             "std::os::raw::c_int",
             &configs.parameter_flavor,
         ),
-        TypeKind::Bool => format_parameter(
-            &entity_name,
-            "std::os::raw::c_bool",
-            &configs.parameter_flavor,
-        ),
+        TypeKind::Bool => format_parameter(&entity_name, "bool", &configs.parameter_flavor),
         TypeKind::Enum => {
             let d = entity_type.get_declaration().unwrap();
             let rust_type = get_full_name_of_entity(&d);

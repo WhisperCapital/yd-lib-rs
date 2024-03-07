@@ -34,7 +34,10 @@ pub fn handle_api_trait(
     full_trait_name: &str,
 ) -> Vec<String> {
     let mut lines = Vec::new();
-    lines.push(format!("\npub impl {full_trait_name} {{\n"));
+    lines.push(format!(r#"
+pub struct {full_trait_name} {{}}
+impl {full_trait_name} {{
+"#));
     lines.extend(process_children(
         entity,
         handlers,
