@@ -14,7 +14,8 @@ pub enum MethodFlavor {
     /// method is in a struct
     Struct,
     /// method is in a trait
-    Trait,
+    SpiTrait,
+    ApiTrait,
     StaticTable,
     OutputEnum,
     OutputEnumStruct,
@@ -59,10 +60,56 @@ pub fn handle_function_prototype(
         },
     );
     match configs.method_flavor {
-        MethodFlavor::Trait => {
+        MethodFlavor::SpiTrait => {
             lines.push(format!("{}fn {snake_fn_name}(&mut self", *INDENT));
             lines.extend(child_lines_rs);
             lines.push(format!(") {{}}\n"));
+        }
+        MethodFlavor::ApiTrait => {
+            lines.push(format!("{}pub fn {snake_fn_name}(&mut self", *INDENT));
+            lines.extend(child_lines_rs);
+            let result_type = entity.get_result_type().unwrap().get_display_name();
+            let result_type = match result_type.as_str() {
+                "void" => "()".to_string(),
+                "int" => "std::os::raw::c_int".to_string(),
+                "bool" => "std::os::raw::c_bool".to_string(),
+                "const char *" => "*const std::os::raw::c_char".to_string(),
+                // "const YDSystemParam *" => "*const YDSystemParam".to_string(),
+                // "const YDExchange *" => "*const YDExchange".to_string(),
+                // "const YDProduct *" => "*const YDProduct".to_string(),
+                // "const YDInstrument *" => "*const YDInstrument".to_string(),
+                // "const YDCombPositionDef *" => "*const YDCombPositionDef".to_string(),
+                // "const YDPrePosition *" => "*const YDPrePosition".to_string(),
+                // "const YDAccount *" => "*const YDAccount".to_string(),
+                // "const YDPreHolding *" => "*const YDPreHolding".to_string(),
+                // "const YDSpotPrePosition *" => "*const YDSpotPrePosition".to_string(),
+                // "const YDMarginRate *" => "*const YDMarginRate".to_string(),
+                // "const YDCommissionRate *" => "*const YDCommissionRate".to_string(),
+                _ => format!("/** {} */", result_type),
+            };
+            // TODO: 这个可能需要拼一下，不知道对不对
+            let full_api_name = record_name;
+            let full_fn_name = camel_case_name;
+            let child_lines_c = process_children(
+                entity,
+                handlers,
+                &mut HandlerConfigs {
+                    // ask function handler to output trait style code
+                    parameter_flavor: ParameterFlavor::C,
+                    ..configs.clone()
+                },
+            );
+            lines.push(format!(
+                r#") -> {result_type} {{
+        unsafe {{
+            ((*(*self).vtable_).{full_fn_name})(self as *mut {full_api_name}"#
+            ));
+            lines.extend(child_lines_c);
+            lines.push(format!(
+                r#")
+        }}
+    }}"#
+            ));
         }
         MethodFlavor::Struct => {
             lines.push(format!(

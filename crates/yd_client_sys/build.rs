@@ -5,9 +5,8 @@ use std::{env, fs::File, io::Write, path::PathBuf};
 extern crate lazy_static;
 mod build_utils;
 
-use build_utils::create_handlers;
-
 use crate::build_utils::{process_children, HandlerConfigs};
+use build_utils::{create_handlers, HandlerMap};
 
 // 路径常量
 lazy_static! {
@@ -32,8 +31,10 @@ fn main() {
     let index = Index::new(&binding, false, false);
     let wrapper_hpp_path = THIRD_PARTY_PROJECT_DIR.join("wrapper.hpp");
     let library_header_ast = index.parser(wrapper_hpp_path).parse().unwrap();
-    // generate_api_wrapper(&library_header_ast);
-    generate_spi_wrapper(&library_header_ast);
+    let entity = library_header_ast.get_entity();
+    let handlers = create_handlers(); // Assume this function is defined elsewhere
+    generate_api_wrapper(&entity, &handlers);
+    generate_spi_wrapper(&entity, &handlers);
 }
 
 /// 用 bindgen 生成与 C++ 代码兼容的 rust 的类型，生成的东西非常基本，还需要通过 unsafe 调用
@@ -85,23 +86,32 @@ fn generate_type() {
 }
 
 /// 生成用于主动调用的 API 的 unsafe fn wrapper，以免每次在业务代码里调用 API 都要手动写
-fn generate_api_wrapper(library_header_ast: &TranslationUnit) {
-    let file_path =
-        File::create(OUT_PATH.join("api_wrapper.rs")).expect("unable to create api_wrapper file");
+fn generate_api_wrapper(entity: &Entity, handlers: &HandlerMap) {
+    let mut file_path =
+        File::create(OUT_PATH.join("api_wrapper.rs")).expect("Unable to create api_wrapper file");
+    console_debug!("file_path {:?}", file_path);
+
+    let mut configs = HandlerConfigs::default();
+    configs.record_flavor = build_utils::handlers::handle_record::RecordFlavor::API;
+    let lines = process_children(entity, handlers, &mut configs);
+    let file_content = lines.join("");
+    file_path
+        .write_all(file_content.as_bytes())
+        .expect("Failed to write to api_wrapper.rs");
 }
 
 /// 生成用于被库调用的回调函数（在 C++ 生态里称为 SPI）的 unsafe fn wrapper，以免每次在业务代码里调用 API 都要手动写
-fn generate_spi_wrapper(library_header_ast: &TranslationUnit) {
+fn generate_spi_wrapper(entity: &Entity, handlers: &HandlerMap) {
     let mut file_path =
-        File::create(OUT_PATH.join("spi_wrapper.rs")).expect("unable to create spi_wrapper file");
+        File::create(OUT_PATH.join("spi_wrapper.rs")).expect("Unable to create spi_wrapper file");
     console_debug!("file_path {:?}", file_path);
-    let handlers = create_handlers();
-    let entity = library_header_ast.get_entity();
+
     let mut configs = HandlerConfigs::default();
-    let lines = process_children(&entity, &handlers, &mut configs);
+    configs.record_flavor = build_utils::handlers::handle_record::RecordFlavor::SPI;
+    let lines = process_children(entity, handlers, &mut configs);
     let file_content = lines.join("");
     file_path
-        .write(file_content.as_bytes())
+        .write_all(file_content.as_bytes())
         .expect("Failed to write to spi_wrapper.rs");
 
     // Debug 用，打印所有节点

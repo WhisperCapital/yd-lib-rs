@@ -5,6 +5,8 @@ use clang::*;
 
 pub mod spi;
 use spi::handle_spi_record;
+pub mod api;
+use api::handle_api_record;
 
 #[derive(Clone)]
 pub enum RecordFlavor {
@@ -22,16 +24,34 @@ pub fn handle_record(
     configs: &mut HandlerConfigs,
 ) -> Vec<String> {
     let record_name = entity.get_display_name().unwrap_or_default();
-    let mut lines: Vec<String> = vec![format!("// Record: {}\n", record_name)];
+    let mut lines: Vec<String> = vec![];
     configs.record_name = record_name;
     let full_rust_struct_name = get_full_name_of_entity(&entity);
-    if full_rust_struct_name == "YDListener" {
-        lines.extend(handle_spi_record(
-            entity,
-            handlers,
-            configs,
-            &full_rust_struct_name,
-        ));
+    match configs.record_flavor {
+        RecordFlavor::SPI => {
+            if full_rust_struct_name == "YDListener" {
+                lines.extend(handle_spi_record(
+                    entity,
+                    handlers,
+                    configs,
+                    &full_rust_struct_name,
+                ));
+            }
+        }
+        RecordFlavor::API => {
+            if full_rust_struct_name == "YDApi" {
+                lines.extend(handle_api_record(
+                    entity,
+                    handlers,
+                    configs,
+                    &full_rust_struct_name,
+                ));
+            }
+        }
+        RecordFlavor::None => {
+            // add format!("// Record: {}\n", record_name)
+            lines.push(format!("\n// Record: {}\n", configs.record_name));
+        }
     }
     lines
 }

@@ -3,7 +3,7 @@ use clang::*;
 use std::collections::HashMap;
 
 mod format_name;
-mod handlers;
+pub mod handlers;
 pub use self::config::HandlerConfigs;
 use handlers::*;
 
