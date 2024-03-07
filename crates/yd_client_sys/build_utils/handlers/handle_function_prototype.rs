@@ -66,27 +66,14 @@ pub fn handle_function_prototype(
             lines.push(format!(") {{}}\n"));
         }
         MethodFlavor::ApiTrait => {
+            if camel_case_name.starts_with("~") {
+                // TODO: 在别处处理类的析构
+                return lines;
+            }
             lines.push(format!("{}pub fn {snake_fn_name}(&mut self", *INDENT));
             lines.extend(child_lines_rs);
-            let result_type = entity.get_result_type().unwrap().get_display_name();
-            let result_type = match result_type.as_str() {
-                "void" => "()".to_string(),
-                "int" => "std::os::raw::c_int".to_string(),
-                "bool" => "std::os::raw::c_bool".to_string(),
-                "const char *" => "*const std::os::raw::c_char".to_string(),
-                // "const YDSystemParam *" => "*const YDSystemParam".to_string(),
-                // "const YDExchange *" => "*const YDExchange".to_string(),
-                // "const YDProduct *" => "*const YDProduct".to_string(),
-                // "const YDInstrument *" => "*const YDInstrument".to_string(),
-                // "const YDCombPositionDef *" => "*const YDCombPositionDef".to_string(),
-                // "const YDPrePosition *" => "*const YDPrePosition".to_string(),
-                // "const YDAccount *" => "*const YDAccount".to_string(),
-                // "const YDPreHolding *" => "*const YDPreHolding".to_string(),
-                // "const YDSpotPrePosition *" => "*const YDSpotPrePosition".to_string(),
-                // "const YDMarginRate *" => "*const YDMarginRate".to_string(),
-                // "const YDCommissionRate *" => "*const YDCommissionRate".to_string(),
-                _ => format!("/** {} */", result_type),
-            };
+            let c_result_type = entity.get_result_type().unwrap().get_display_name();
+            let rust_result_type = get_rs_result_type_from_c_result_type(&c_result_type);
             // TODO: 这个可能需要拼一下，不知道对不对
             let full_api_name = record_name;
             let full_fn_name = camel_case_name;
@@ -100,7 +87,7 @@ pub fn handle_function_prototype(
                 },
             );
             lines.push(format!(
-                r#") -> {result_type} {{
+                r#") -> {rust_result_type} {{
         unsafe {{
             ((*(*self).vtable_).{full_fn_name})(self as *mut {full_api_name}"#
             ));
@@ -238,4 +225,23 @@ pub fn find_previous_sibling_index(entity: &Entity, configs: &HandlerConfigs) ->
         }
     }
     index
+}
+
+fn get_rs_result_type_from_c_result_type(c_result_type: &str) -> String {
+    match c_result_type {
+        "void" => "()".to_string(),
+        "int" => "std::os::raw::c_int".to_string(),
+        "bool" => "std::os::raw::c_bool".to_string(),
+        "const char *" => "*const std::os::raw::c_char".to_string(),
+        _ => {
+            if c_result_type.starts_with("const ") && c_result_type.ends_with(" *") {
+                // Extract the type without "const " prefix and " *" suffix
+                let t = &c_result_type[6..c_result_type.len() - 2];
+                format!("*const {}", t)
+            } else {
+                // Default case if the type doesn't match the expected pattern
+                format!("/** {} */", c_result_type)
+            }
+        }
+    }
 }
