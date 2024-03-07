@@ -108,7 +108,8 @@ pub fn handle_function_prototype(
             lines.push(format!(
                 r#")
         }}
-    }}"#
+    }}
+"#
             ));
         }
         MethodFlavor::Struct => {
