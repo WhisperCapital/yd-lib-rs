@@ -233,13 +233,12 @@ fn get_rs_result_type_from_c_result_type(c_result_type: &str) -> String {
         "int" => "std::os::raw::c_int".to_string(),
         "bool" => "std::os::raw::c_bool".to_string(),
         "const char *" => "*const std::os::raw::c_char".to_string(),
+        "YDQueryResult<char> *" => "*const YDQueryResult".to_string(),
         _ => {
             if c_result_type.starts_with("const ") && c_result_type.ends_with(" *") {
-                // Extract the type without "const " prefix and " *" suffix
                 let t = &c_result_type[6..c_result_type.len() - 2];
                 format!("*const {}", t)
             } else {
-                // Default case if the type doesn't match the expected pattern
                 format!("/** {} */", c_result_type)
             }
         }

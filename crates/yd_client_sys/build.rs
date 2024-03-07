@@ -80,8 +80,10 @@ fn generate_type() {
         .expect("Unable to generate bindings");
     // TODO: fix "expected trait, found struct `YDListener`"
 
+    let file_path = OUT_PATH.join("bindings.rs");
+    console_debug!("file_path {:?}", file_path);
     bindings
-        .write_to_file(OUT_PATH.join("bindings.rs"))
+        .write_to_file(file_path)
         .expect("Couldn't write bindings!");
 }
 
