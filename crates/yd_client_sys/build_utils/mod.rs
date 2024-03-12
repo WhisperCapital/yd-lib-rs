@@ -59,26 +59,54 @@ fn count_children_with_same_handler(
         .count()
 }
 
+fn get_child_index_with_same_handler(
+    entity: &Entity,
+    child_entity: &Entity,
+    child_handler: &Handler,
+    handlers: &HandlerMap,
+) -> usize {
+    let mut count = 0;
+    for child in entity.get_children().into_iter() {
+        // Stop counting once we reach the child entity
+        if &child == child_entity {
+            break;
+        }
+
+        if let Some(c_handler) = get_handler(&child, handlers) {
+            if matches!(
+                (c_handler, child_handler),
+                (Handler::Record(_), Handler::Record(_))
+                    | (Handler::FunctionPrototype(_), Handler::FunctionPrototype(_))
+            ) {
+                count += 1;
+            }
+        }
+    }
+    count
+}
+
+
 pub fn process_children(
     entity: &Entity,
     handlers: &HandlerMap,
     configs: &mut HandlerConfigs,
 ) -> Vec<String> {
     let mut lines: Vec<String> = Vec::new();
-    let mut current_child_index: usize = 0;
+
     entity.visit_children(|child, _| {
         if let Some(child_handler) = get_handler(&child, handlers) {
-            configs.num_parent_children_same_handler =
-                count_children_with_same_handler(entity, child_handler, handlers)
-                    .try_into()
-                    .unwrap_or(0);
-            configs.index = current_child_index;
+            let num_parent_children_same_handler = count_children_with_same_handler(entity, &child_handler, handlers);
+            let child_index = get_child_index_with_same_handler(entity, &child, &child_handler, handlers);
+
+            configs.num_parent_children_same_handler = num_parent_children_same_handler.try_into().unwrap_or(0);
+            configs.index = child_index;
+
             match child_handler {
                 Handler::Record(h) => lines.extend(h(&child, handlers, configs)),
                 Handler::FunctionPrototype(h) => lines.extend(h(&child, handlers, configs)),
             }
         }
-        current_child_index += 1;
+
         EntityVisitResult::Continue
     });
 

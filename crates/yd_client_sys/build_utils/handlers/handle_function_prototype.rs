@@ -30,7 +30,7 @@ pub fn handle_function_prototype(
     handlers: &HandlerMap,
     configs: &mut HandlerConfigs,
 ) -> Vec<String> {
-    let camel_case_name = entity.get_name().unwrap();
+    let raw_camel_case_name = entity.get_name().unwrap();
     let record_name = configs.record_name.clone();
     let sibling_index = find_previous_sibling_index(entity, configs);
     let method_reload_suffix = if sibling_index > 0 {
@@ -40,11 +40,13 @@ pub fn handle_function_prototype(
     };
     let snake_fn_name = format!(
         "{}{method_reload_suffix}",
-        Inflector::to_snake_case(&camel_case_name)
+        Inflector::to_snake_case(&raw_camel_case_name)
     );
+    let camel_case_name = Inflector::to_camel_case(&snake_fn_name);
+
     let enum_name = format!(
         "{}{method_reload_suffix}",
-        format_enum_name(&camel_case_name)
+        format_enum_name(&raw_camel_case_name)
     );
     let packet_name = format!("{record_name}{enum_name}Packet");
 
@@ -69,7 +71,7 @@ pub fn handle_function_prototype(
             lines.push(format!(") {{}}\n"));
         }
         MethodFlavor::ApiTrait => {
-            if camel_case_name.starts_with("~") {
+            if raw_camel_case_name.starts_with("~") {
                 // TODO: 在别处处理类的析构
                 return lines;
             }
@@ -82,7 +84,6 @@ pub fn handle_function_prototype(
             let rust_result_type = get_rs_result_type_from_c_result_type(&c_result_type);
             // TODO: 这个可能需要拼一下，不知道对不对
             let full_api_name = record_name;
-            let full_fn_name = camel_case_name;
             let child_lines_c = process_children(
                 entity,
                 handlers,
@@ -95,7 +96,7 @@ pub fn handle_function_prototype(
             lines.push(format!(
                 r#") -> {rust_result_type} {{
         unsafe {{
-            ((*(*self).vtable_).{full_fn_name})(self as *mut {full_api_name}"#
+            ((*(*self).vtable_).{camel_case_name})(self as *mut {full_api_name}"#
             ));
             lines.extend(child_lines_c);
             lines.push(format!(
@@ -186,7 +187,7 @@ extern "C" fn spi_{snake_fn_name}(spi: *mut {record_name}Fat"#
         self.inner.lock().unwrap().push("#
             ));
             lines.push(format!(
-                "{full_spi_output_enum_name}::{snake_fn_name}({packet_name}Packet {{\n",
+                "{full_spi_output_enum_name}::{camel_case_name}({packet_name}Packet {{\n",
                 full_spi_output_enum_name = format!("{record_name}Output")
             ));
             lines.extend(process_children(
