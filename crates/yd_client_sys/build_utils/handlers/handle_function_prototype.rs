@@ -62,6 +62,9 @@ pub fn handle_function_prototype(
     match configs.method_flavor {
         MethodFlavor::SpiTrait => {
             lines.push(format!("{}fn {snake_fn_name}(&mut self", *INDENT));
+            if !child_lines_rs.is_empty() {
+                lines.push(format!(", "));
+            }
             lines.extend(child_lines_rs);
             lines.push(format!(") {{}}\n"));
         }
@@ -71,6 +74,9 @@ pub fn handle_function_prototype(
                 return lines;
             }
             lines.push(format!("{}pub fn {snake_fn_name}(&mut self", *INDENT));
+            if !child_lines_rs.is_empty() {
+                lines.push(format!(", "));
+            }
             lines.extend(child_lines_rs);
             let c_result_type = entity.get_result_type().unwrap().get_display_name();
             let rust_result_type = get_rs_result_type_from_c_result_type(&c_result_type);
