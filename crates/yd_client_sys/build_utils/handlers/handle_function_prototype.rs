@@ -54,7 +54,7 @@ pub fn handle_function_prototype(
         "{}{method_reload_suffix}",
         format_enum_name(&raw_camel_case_name)
     );
-    let packet_name = format!("{record_name}{enum_name}Packet");
+    let packet_name_prefix = format!("{record_name}{enum_name}");
 
     let mut lines: Vec<String> = vec![];
     // get arg from child node if possible
@@ -130,13 +130,13 @@ pub fn handle_function_prototype(
             ));
         }
         MethodFlavor::OutputEnum => {
-            lines.push(format!("{}{enum_name}({packet_name}Packet),\n", *INDENT));
+            lines.push(format!("{}{enum_name}({packet_name_prefix}Packet),\n", *INDENT));
         }
         MethodFlavor::OutputEnumStruct => {
             lines.push(format!(
                 r#"
 #[derive(Clone, Debug)]
-pub struct {packet_name}Packet {{
+pub struct {packet_name_prefix}Packet {{
 "#
             ));
             let child_lines_rs_struct = process_children(
@@ -193,7 +193,7 @@ extern "C" fn spi_{snake_fn_name}(spi: *mut {record_name}Fat"#
         self.inner.lock().unwrap().push("#
             ));
             lines.push(format!(
-                "{full_spi_output_enum_name}::{camel_case_name}({packet_name}Packet {{\n",
+                "{full_spi_output_enum_name}::{enum_name}({packet_name_prefix}Packet {{\n",
                 full_spi_output_enum_name = format!("{record_name}Output")
             ));
             lines.extend(process_children(
