@@ -9,6 +9,12 @@ lazy_static! {
     static ref INDENT: String = "    ".to_string();
 }
 
+macro_rules! console_debug {
+    ($($tokens: tt)*) => {
+        println!("cargo:warning={}", format!($($tokens)*))
+    }
+}
+
 #[derive(Clone)]
 pub enum MethodFlavor {
     /// method is in a struct
@@ -222,7 +228,7 @@ pub fn find_previous_sibling_index(entity: &Entity, configs: &HandlerConfigs) ->
         let siblings = parent.get_children();
 
         // Ensure we only iterate up to the current entity's index as specified in configs
-        for sibling in siblings.iter().take(configs.index) {
+        for sibling in siblings.iter().take(configs.index + 1) {
             if sibling.get_kind() == entity.get_kind() {
                 if sibling.get_name().unwrap() == current_name {
                     // Increment index for each sibling with the same name found
