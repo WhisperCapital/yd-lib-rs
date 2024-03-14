@@ -89,21 +89,25 @@ pub fn handle_function_prototype(
             let c_result_type = entity.get_result_type().unwrap().get_display_name();
             let rust_result_type = get_rs_result_type_from_c_result_type(&c_result_type);
             // TODO: 这个可能需要拼一下，不知道对不对
-            let full_api_name = record_name;
+            let full_api_record_name = format!("{record_name}_{camel_case_name}");
             let child_lines_c = process_children(
                 entity,
                 handlers,
                 &mut HandlerConfigs {
                     // ask function handler to output trait style code
-                    parameter_flavor: ParameterFlavor::C,
+                    parameter_flavor: ParameterFlavor::MethodCallParam,
                     ..configs.clone()
                 },
             );
             lines.push(format!(
                 r#") -> {rust_result_type} {{
         unsafe {{
-            ((*(*self).vtable_).{full_api_name}_{camel_case_name})(self as *mut {full_api_name}"#
+            ((*(*self).vtable_).{full_api_record_name})(self as *mut {record_name}"#
             ));
+            // console_debug!("{full_api_record_name} {:?}", child_lines_c);
+            if !child_lines_c.is_empty() {
+                lines.push(format!(", "));
+            }
             lines.extend(child_lines_c);
             lines.push(format!(
                 r#")
@@ -157,7 +161,7 @@ pub struct {packet_name_prefix}Packet {{
                 handlers,
                 &mut HandlerConfigs {
                     // ask function handler to output trait style code
-                    parameter_flavor: ParameterFlavor::C,
+                    parameter_flavor: ParameterFlavor::MethodCallParam,
                     ..configs.clone()
                 },
             );

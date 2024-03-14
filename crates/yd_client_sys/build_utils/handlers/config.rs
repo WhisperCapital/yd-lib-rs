@@ -13,6 +13,7 @@ pub struct HandlerConfigs {
     pub index: usize,
     /// how many children does the parent have, only count children with same type (and processed by same handler)
     pub num_parent_children_same_handler: usize,
+    pub debug: bool,
 }
 
 impl Default for HandlerConfigs {
@@ -24,6 +25,7 @@ impl Default for HandlerConfigs {
             record_name: "WarningRecordNameUnfilled".to_string(),
             index: 0,
             num_parent_children_same_handler: 0,
+            debug: false,
         }
     }
 }
