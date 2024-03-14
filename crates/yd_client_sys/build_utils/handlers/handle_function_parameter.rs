@@ -30,12 +30,15 @@ macro_rules! console_debug {
 
 pub fn insert_function_parameter_handlers(handlers: &mut HandlerMap) {
     let parameter_types_to_handle = [
-        TypeKind::Int,
         TypeKind::Bool,
-        TypeKind::IncompleteArray,
-        TypeKind::Pointer,
+        TypeKind::Double,
         TypeKind::Elaborated,
+        TypeKind::IncompleteArray,
+        TypeKind::Int,
+        TypeKind::Pointer,
         TypeKind::Typedef,
+        TypeKind::UInt,
+        TypeKind::ULongLong,
     ];
     for type_kind in parameter_types_to_handle {
         handlers.insert(
@@ -66,6 +69,13 @@ pub fn handle_function_parameter(
             let parameter = get_typedef_parameter(&entity_type, &configs.parameter_flavor);
             format_parameter(&entity_name, &parameter, &configs.parameter_flavor)
         }
+        TypeKind::UInt => format_parameter(
+            &entity_name,
+            "std::os::raw::c_uint",
+            &configs.parameter_flavor,
+        ),
+        TypeKind::Double => format_parameter(&entity_name, "f64", &configs.parameter_flavor),
+        TypeKind::ULongLong => format_parameter(&entity_name, "u64", &configs.parameter_flavor),
         TypeKind::Int => format_parameter(
             &entity_name,
             "std::os::raw::c_int",
@@ -155,13 +165,15 @@ fn get_pointer_parameter(entity_type: &Type, flavor: &ParameterFlavor) -> String
                 },
                 _ => panic!("Unhandled pointer to pointer type"),
             }
-        },
+        }
         _ => {
             if let Some(decl) = pointee_type.get_declaration() {
                 let type_name = get_full_name_of_entity(&decl);
                 match flavor {
                     ParameterFlavor::MethodCallParam => format!(" as *const {}", type_name),
-                    ParameterFlavor::Rust | ParameterFlavor::RustStruct => format!("&{}", type_name),
+                    ParameterFlavor::Rust | ParameterFlavor::RustStruct => {
+                        format!("&{}", type_name)
+                    }
                     ParameterFlavor::SpiFn => format!("&{}", type_name),
                     ParameterFlavor::None => format!("/* {} */", type_name),
                 }
@@ -174,14 +186,14 @@ fn get_pointer_parameter(entity_type: &Type, flavor: &ParameterFlavor) -> String
                         } else {
                             format!(" as *mut {}", type_name)
                         }
-                    },
+                    }
                     ParameterFlavor::Rust | ParameterFlavor::RustStruct => {
                         if entity_type.is_const_qualified() {
                             format!("&{}", type_name)
                         } else {
                             format!("&mut {}", type_name)
                         }
-                    },
+                    }
                     ParameterFlavor::SpiFn => format!("&{}", type_name),
                     ParameterFlavor::None => format!("/* {} */", type_name),
                 }
@@ -202,18 +214,24 @@ fn get_typedef_parameter(entity_type: &Type, flavor: &ParameterFlavor) -> String
     match underlying_type.get_kind() {
         TypeKind::CharS => match flavor {
             ParameterFlavor::MethodCallParam => "*const std::os::raw::c_char".to_string(),
-            ParameterFlavor::Rust | ParameterFlavor::RustStruct => "std::os::raw::c_char".to_string(),
+            ParameterFlavor::Rust | ParameterFlavor::RustStruct => {
+                "std::os::raw::c_char".to_string()
+            }
             ParameterFlavor::SpiFn => "as *const std::os::raw::c_char".to_string(),
             ParameterFlavor::None => "/* c_char */".to_string(),
         },
         TypeKind::Pointer => get_pointer_parameter(&underlying_type, flavor), // Delegate to the pointer handler
         TypeKind::Int => match flavor {
-            ParameterFlavor::MethodCallParam | ParameterFlavor::Rust | ParameterFlavor::RustStruct => "i32".to_string(),
+            ParameterFlavor::MethodCallParam
+            | ParameterFlavor::Rust
+            | ParameterFlavor::RustStruct => "i32".to_string(),
             ParameterFlavor::SpiFn => "as i32".to_string(),
             ParameterFlavor::None => "/* int */".to_string(),
         },
         TypeKind::Bool => match flavor {
-            ParameterFlavor::MethodCallParam | ParameterFlavor::Rust | ParameterFlavor::RustStruct => "bool".to_string(),
+            ParameterFlavor::MethodCallParam
+            | ParameterFlavor::Rust
+            | ParameterFlavor::RustStruct => "bool".to_string(),
             ParameterFlavor::SpiFn => "as bool".to_string(),
             ParameterFlavor::None => "/* bool */".to_string(),
         },
@@ -227,27 +245,36 @@ fn get_typedef_parameter(entity_type: &Type, flavor: &ParameterFlavor) -> String
                 ParameterFlavor::SpiFn => format!("as *mut {}", type_name),
                 ParameterFlavor::None => format!("/* {} */", type_name),
             }
-        },
+        }
         TypeKind::ConstantArray => {
             let array_type = underlying_type.get_element_type().unwrap();
             let size = underlying_type.get_size().unwrap();
             match array_type.get_kind() {
                 TypeKind::CharS => match flavor {
-                    ParameterFlavor::MethodCallParam | ParameterFlavor::Rust | ParameterFlavor::RustStruct => format!("[std::os::raw::c_char; {}]", size),
+                    ParameterFlavor::MethodCallParam
+                    | ParameterFlavor::Rust
+                    | ParameterFlavor::RustStruct => format!("[std::os::raw::c_char; {}]", size),
                     ParameterFlavor::SpiFn => format!("as *const [std::os::raw::c_char; {}]", size),
                     ParameterFlavor::None => "/* char array */".to_string(),
                 },
                 TypeKind::Int => match flavor {
-                    ParameterFlavor::MethodCallParam | ParameterFlavor::Rust | ParameterFlavor::RustStruct => format!("[i32; {}]", size),
+                    ParameterFlavor::MethodCallParam
+                    | ParameterFlavor::Rust
+                    | ParameterFlavor::RustStruct => format!("[i32; {}]", size),
                     ParameterFlavor::SpiFn => format!("as *const [i32; {}]", size),
                     ParameterFlavor::None => "/* int array */".to_string(),
                 },
                 // Add other type cases as needed
-                _ => panic!("Unhandled constant array element type: {:?}", array_type.get_kind()),
+                _ => panic!(
+                    "Unhandled constant array element type: {:?}",
+                    array_type.get_kind()
+                ),
             }
-        },
+        }
         TypeKind::LongLong => match flavor {
-            ParameterFlavor::MethodCallParam | ParameterFlavor::Rust | ParameterFlavor::RustStruct => {
+            ParameterFlavor::MethodCallParam
+            | ParameterFlavor::Rust
+            | ParameterFlavor::RustStruct => {
                 if underlying_type.is_const_qualified() {
                     "const i64".to_string() // or "const u64" if it's unsigned
                 } else {
