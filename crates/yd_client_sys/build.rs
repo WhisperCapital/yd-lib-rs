@@ -89,6 +89,14 @@ fn generate_type(generated_dir: &Path) {
         .clang_arg("-x")
         .clang_arg("c++")
         .clang_arg("-std=c++11")
+        .derive_default(true)
+        .derive_debug(true)
+        .vtable_generation(true)
+        .generate_comments(false) // 不需形成doc ,默认true
+        .layout_tests(false) //不需要test,默认true
+        .generate_comments(false) //不需注释,默认true
+        .derive_copy(true)
+        .derive_hash(false) //不要实现hash
         .clang_arg(format!("-I{}", lib_path.join("include").display())) // Adjust include path as necessary
         .generate()
         .expect("Unable to generate bindings");

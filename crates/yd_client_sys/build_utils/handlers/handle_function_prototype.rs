@@ -102,7 +102,7 @@ pub fn handle_function_prototype(
             lines.push(format!(
                 r#") -> {rust_result_type} {{
         unsafe {{
-            ((*(*self).vtable_).{camel_case_name})(self as *mut {full_api_name}"#
+            ((*(*self).vtable_).{full_api_name}_{camel_case_name})(self as *mut {full_api_name}"#
             ));
             lines.extend(child_lines_c);
             lines.push(format!(
