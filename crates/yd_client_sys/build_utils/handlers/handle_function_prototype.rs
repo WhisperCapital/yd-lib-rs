@@ -134,26 +134,51 @@ pub fn handle_function_prototype(
             ));
         }
         MethodFlavor::OutputEnum => {
-            lines.push(format!("{}{enum_name}({packet_name_prefix}Packet<'a>),\n", *INDENT));
+            let config_for_children = &mut HandlerConfigs {
+                // ask function handler to output trait style code
+                parameter_flavor: ParameterFlavor::RustStruct,
+                ..configs.clone()
+            };
+            process_children(
+                entity,
+                handlers,
+                config_for_children,
+            );
+            // life_time_param_on_parent = config_for_children.life_time_on_children ? "<'a>" : "";
+            let life_time_param_on_parent = if config_for_children.life_time_on_children {
+                "<'a>"
+            } else {
+                ""
+            };
+            configs.life_time_on_children = false;
+            lines.push(format!("{}{enum_name}({packet_name_prefix}Packet{life_time_param_on_parent}),\n", *INDENT));
         }
         MethodFlavor::OutputEnumStruct => {
+            let config_for_children = &mut HandlerConfigs {
+                // ask function handler to output trait style code
+                parameter_flavor: ParameterFlavor::RustStruct,
+                life_time: "'a ".to_string(),
+                ..configs.clone()
+            };
+            let child_lines_rs_struct = process_children(
+                entity,
+                handlers,
+                config_for_children,
+            );
+            // life_time_param_on_parent = config_for_children.life_time_on_children ? "<'a>" : "";
+            let life_time_param_on_parent = if config_for_children.life_time_on_children {
+                "<'a>"
+            } else {
+                ""
+            };
+            configs.life_time_on_children = false;
             lines.push(format!(
                 r#"
 #[allow(unused_lifetimes)]
 #[derive(Clone, Debug)]
-pub struct {packet_name_prefix}Packet<'a> {{
+pub struct {packet_name_prefix}Packet{life_time_param_on_parent} {{
 "#
             ));
-            let child_lines_rs_struct = process_children(
-                entity,
-                handlers,
-                &mut HandlerConfigs {
-                    // ask function handler to output trait style code
-                    parameter_flavor: ParameterFlavor::RustStruct,
-                    life_time: "'a ".to_string(),
-                    ..configs.clone()
-                },
-            );
             lines.extend(child_lines_rs_struct);
             lines.push(format!("\n}}\n"));
         }

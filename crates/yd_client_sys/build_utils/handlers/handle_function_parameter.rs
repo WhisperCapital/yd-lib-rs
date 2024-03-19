@@ -176,6 +176,7 @@ fn get_pointer_parameter(
                 match flavor {
                     ParameterFlavor::MethodCallParam => format!(" as *const {}", type_name),
                     ParameterFlavor::Rust | ParameterFlavor::RustStruct => {
+                        configs.life_time_on_children = true;
                         format!("&{}{}", configs.life_time, type_name)
                     }
                     ParameterFlavor::SpiFn => format!("&{}", type_name),
