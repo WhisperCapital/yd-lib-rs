@@ -25,6 +25,7 @@ macro_rules! console_debug {
 }
 
 fn main() {
+    println!("cargo:rerun-if-changed=thirdparty/wrapper.hpp");
     let generated_dir = Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap()).join("src/generated");
     if !generated_dir.exists() {
         fs::create_dir_all(&generated_dir).expect("Couldn't create generated directory");
@@ -53,7 +54,6 @@ fn create_mod_file(generated_dir: &Path) {
 
 /// 用 bindgen 生成与 C++ 代码兼容的 rust 的类型，生成的东西非常基本，还需要通过 unsafe 调用
 fn generate_type(generated_dir: &Path) {
-    println!("cargo:rerun-if-changed=wrapper.hpp");
     println!("cargo:rustc-link-lib=dylib=stdc++");
 
     // Determine the platform-specific library directory
