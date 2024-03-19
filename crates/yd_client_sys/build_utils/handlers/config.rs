@@ -9,6 +9,7 @@ pub struct HandlerConfigs {
     pub parameter_flavor: ParameterFlavor,
     pub record_flavor: RecordFlavor,
     pub record_name: String,
+    pub life_time: String,
     /// the index of this child in its parent
     pub index: usize,
     /// how many children does the parent have, only count children with same type (and processed by same handler)
@@ -22,6 +23,7 @@ impl Default for HandlerConfigs {
             method_flavor: MethodFlavor::None,
             parameter_flavor: ParameterFlavor::None,
             record_flavor: RecordFlavor::None,
+            life_time: "".to_string(),
             record_name: "WarningRecordNameUnfilled".to_string(),
             index: 0,
             num_parent_children_same_handler: 0,

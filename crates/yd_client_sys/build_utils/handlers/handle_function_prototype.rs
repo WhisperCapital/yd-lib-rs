@@ -140,7 +140,7 @@ pub fn handle_function_prototype(
             lines.push(format!(
                 r#"
 #[derive(Clone, Debug)]
-pub struct {packet_name_prefix}Packet {{
+pub struct {packet_name_prefix}Packet<'a> {{
 "#
             ));
             let child_lines_rs_struct = process_children(
@@ -149,6 +149,7 @@ pub struct {packet_name_prefix}Packet {{
                 &mut HandlerConfigs {
                     // ask function handler to output trait style code
                     parameter_flavor: ParameterFlavor::RustStruct,
+                    life_time: "'a ".to_string(),
                     ..configs.clone()
                 },
             );
