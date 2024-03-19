@@ -134,11 +134,12 @@ pub fn handle_function_prototype(
             ));
         }
         MethodFlavor::OutputEnum => {
-            lines.push(format!("{}{enum_name}({packet_name_prefix}Packet),\n", *INDENT));
+            lines.push(format!("{}{enum_name}({packet_name_prefix}Packet<'a>),\n", *INDENT));
         }
         MethodFlavor::OutputEnumStruct => {
             lines.push(format!(
                 r#"
+#[allow(unused_lifetimes)]
 #[derive(Clone, Debug)]
 pub struct {packet_name_prefix}Packet<'a> {{
 "#

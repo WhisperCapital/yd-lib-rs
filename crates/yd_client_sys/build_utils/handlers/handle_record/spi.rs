@@ -140,7 +140,7 @@ pub fn handle_spi_output_enum(
     full_rust_struct_name: &str,
 ) -> Vec<String> {
     let mut lines = Vec::new();
-    let full_spi_output_enum_name = format!("{full_rust_struct_name}Output");
+    let full_spi_output_enum_name = format!("{full_rust_struct_name}Output<'a>");
     lines.push(format!(
         r#"
 #[derive(Clone, Debug)]
@@ -245,12 +245,12 @@ pub fn handle_spi_stream_code(full_spi_name: &str, full_spi_output_enum_name: &s
         task::Waker,
     }};
 
-struct {full_spi_name}Inner {{
-    buf: std::collections::VecDeque<{full_spi_output_enum_name}>,
+struct {full_spi_name}Inner<'a> {{
+    buf: std::collections::VecDeque<{full_spi_output_enum_name}<'a>>,
     waker: Option<Waker>,
 }}
 
-impl {full_spi_name}Inner {{
+impl {full_spi_name}Inner<'_> {{
     fn push(&mut self, msg: {full_spi_output_enum_name}) {{
         self.buf.push_back(msg);
         if let Some(ref waker) = &self.waker {{
@@ -259,12 +259,12 @@ impl {full_spi_name}Inner {{
     }}
 }}
 
-pub struct {full_spi_name}Stream {{
-    inner: Arc<Mutex<{full_spi_name}Inner>>,
+pub struct {full_spi_name}Stream<'a> {{
+    inner: Arc<Mutex<{full_spi_name}Inner<'a>>>,
 }}
 
-impl Stream for {full_spi_name}Stream {{
-    type Item = {full_spi_output_enum_name};
+impl<'a> Stream for {full_spi_name}Stream<'a> {{
+    type Item = {full_spi_output_enum_name}<'a>;
 
     fn poll_next(
         self: Pin<&mut Self>,
@@ -285,7 +285,7 @@ impl Stream for {full_spi_name}Stream {{
     }}
 }}
 
-pub fn create_spi() -> (Box<{full_spi_name}Stream>, *mut {full_spi_name}Stream) {{
+pub fn create_spi() -> (Box<{full_spi_name}Stream<'static>>, *mut {full_spi_name}Stream<'static>) {{
     let i = {full_spi_name}Inner {{
         buf: std::collections::VecDeque::new(),
         waker: None,
@@ -311,7 +311,7 @@ pub fn handle_spi_fn(
 ) -> Vec<String> {
     let mut lines = Vec::new();
     lines.push(format!(
-        "\nimpl {full_trait_name} for {full_rust_struct_name}Stream {{\n",
+        "\nimpl {full_trait_name} for {full_rust_struct_name}Stream<'_> {{\n",
     ));
     lines.extend(process_children(
         entity,
