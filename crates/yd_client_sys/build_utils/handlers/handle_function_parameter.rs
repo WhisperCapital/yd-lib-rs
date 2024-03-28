@@ -39,6 +39,7 @@ pub fn insert_function_parameter_handlers(handlers: &mut HandlerMap) {
         TypeKind::Typedef,
         TypeKind::UInt,
         TypeKind::ULongLong,
+        TypeKind::Enum,
     ];
     for type_kind in parameter_types_to_handle {
         handlers.insert(
@@ -53,7 +54,11 @@ pub fn handle_function_parameter(
     configs: &mut HandlerConfigs,
 ) -> Vec<String> {
     let entity_type = entity.get_type().unwrap();
-    let entity_name = Inflector::to_snake_case(&entity.get_name().unwrap());
+    let entity_name = if entity.get_name().unwrap() == "type" {
+        "type_".to_string()  // Rename "type" to "type_"
+    } else {
+        Inflector::to_snake_case(&entity.get_name().unwrap())
+    };
     // console_debug!(
     //     "handle_function_parameter {:?} {:?}",
     //     entity_name,

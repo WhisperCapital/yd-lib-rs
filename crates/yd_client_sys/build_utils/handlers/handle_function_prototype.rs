@@ -88,9 +88,8 @@ pub fn handle_function_prototype(
             lines.extend(child_lines_rs);
             let c_result_type = entity.get_result_type().unwrap().get_display_name();
             let rust_result_type = get_rs_result_type_from_c_result_type(&c_result_type);
-            // TODO: 这个可能需要拼一下，不知道对不对
             let full_api_record_name = format!("{record_name}_{camel_case_name}");
-            let child_lines_c = process_children(
+            let child_lines_c_method_call_param = process_children(
                 entity,
                 handlers,
                 &mut HandlerConfigs {
@@ -105,10 +104,10 @@ pub fn handle_function_prototype(
             ((*(*self).vtable_).{full_api_record_name})(self as *mut {record_name}"#
             ));
             // console_debug!("{full_api_record_name} {:?}", child_lines_c);
-            if !child_lines_c.is_empty() {
+            if !child_lines_c_method_call_param.is_empty() {
                 lines.push(format!(", "));
             }
-            lines.extend(child_lines_c);
+            lines.extend(child_lines_c_method_call_param);
             lines.push(format!(
                 r#")
         }}
