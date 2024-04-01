@@ -48,7 +48,7 @@ pub fn handle_function_prototype(
         "{}{method_reload_suffix}",
         Inflector::to_snake_case(&raw_camel_case_name)
     );
-    let camel_case_name = Inflector::to_camel_case(&snake_fn_name);
+    let camel_case_name = Inflector::to_camel_case(&snake_fn_name).replace("Id", "ID");
 
     let enum_name = format!(
         "{}{method_reload_suffix}",
