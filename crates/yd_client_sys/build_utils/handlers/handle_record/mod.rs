@@ -8,7 +8,7 @@ use spi::handle_spi_record;
 pub mod api;
 use api::handle_api_record;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum RecordFlavor {
     /// Callback, need to generate a trait, stream, v-table...
     SPI,

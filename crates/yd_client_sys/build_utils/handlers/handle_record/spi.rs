@@ -93,7 +93,7 @@ pub fn handle_spi_trait(
     full_trait_name: &str,
 ) -> Vec<String> {
     let mut lines = Vec::new();
-    lines.push(format!("\npub trait {full_trait_name}: Send {{\n"));
+    lines.push(format!("\npub trait {full_trait_name} {{\n"));
     lines.extend(process_children(
         entity,
         handlers,

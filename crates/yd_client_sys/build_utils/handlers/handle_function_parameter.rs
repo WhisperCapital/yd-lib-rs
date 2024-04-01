@@ -8,7 +8,7 @@ lazy_static! {
     static ref INDENT: String = "    ".to_string();
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum ParameterFlavor {
     /// return c style parameter code
     MethodCallParam,
@@ -55,24 +55,30 @@ pub fn handle_function_parameter(
 ) -> Vec<String> {
     let entity_type = entity.get_type().unwrap();
     let entity_name = if entity.get_name().unwrap() == "type" {
-        "type_".to_string()  // Rename "type" to "type_"
+        "type_".to_string() // Rename "type" to "type_"
     } else {
         Inflector::to_snake_case(&entity.get_name().unwrap())
     };
-    // console_debug!(
-    //     "handle_function_parameter {:?} {:?}",
-    //     entity_name,
-    //     entity_type.get_kind()
-    // );
+    console_debug!(
+        "handle_function_parameter {:?} {:?}",
+        entity_name,
+        entity_type.get_kind()
+    );
 
     let parameter_str = match entity_type.get_kind() {
         TypeKind::Pointer => {
-            let parameter = get_pointer_parameter(&entity_type, configs);
-            format_parameter(&entity_name, &parameter, &configs.parameter_flavor)
+            let parameter = get_pointer_parameter(&entity_name, &entity_type, configs);
+            match &configs.parameter_flavor {
+                ParameterFlavor::MethodCallParam => parameter,
+                _ => format_parameter(&entity_name, &parameter, &configs.parameter_flavor),
+            }
         }
         TypeKind::Typedef => {
-            let parameter = get_typedef_parameter(&entity_type, configs);
-            format_parameter(&entity_name, &parameter, &configs.parameter_flavor)
+            let parameter = get_typedef_parameter(&entity_name, &entity_type, configs);
+            match &configs.parameter_flavor {
+                ParameterFlavor::MethodCallParam => parameter,
+                _ => format_parameter(&entity_name, &parameter, &configs.parameter_flavor),
+            }
         }
         TypeKind::UInt => format_parameter(
             &entity_name,
@@ -144,21 +150,19 @@ fn format_parameter(name: &str, parameter: &str, flavor: &ParameterFlavor) -> St
     }
 }
 
-fn get_pointer_parameter(
-    entity_type: &Type,
-    configs: &mut HandlerConfigs,
-) -> String {
+fn get_pointer_parameter(name: &str, entity_type: &Type, configs: &mut HandlerConfigs) -> String {
     let pointee_type = entity_type.get_pointee_type().unwrap();
     let flavor = &configs.parameter_flavor;
+    console_debug!("get_pointer_parameter {:?} {:?}", pointee_type, flavor,);
     match pointee_type.get_kind() {
         TypeKind::CharS => match flavor {
-            ParameterFlavor::MethodCallParam => " as *const i8".to_string(),
+            ParameterFlavor::MethodCallParam => format!("{}", name),
             ParameterFlavor::Rust | ParameterFlavor::RustStruct => "std::ffi::CString".to_string(),
             ParameterFlavor::SpiFn => "*const std::os::raw::c_char".to_string(),
             ParameterFlavor::None => "/* char* */".to_string(),
         },
         TypeKind::UChar => match flavor {
-            ParameterFlavor::MethodCallParam => " as *const u8".to_string(),
+            ParameterFlavor::MethodCallParam => format!("{}", name),
             ParameterFlavor::Rust | ParameterFlavor::RustStruct => "u8".to_string(),
             ParameterFlavor::SpiFn => "*const std::os::raw::c_uchar".to_string(),
             ParameterFlavor::None => "/* unsigned char* */".to_string(),
@@ -167,42 +171,58 @@ fn get_pointer_parameter(
             let inner_type = pointee_type.get_pointee_type().unwrap();
             match inner_type.get_kind() {
                 TypeKind::CharS => match flavor {
-                    ParameterFlavor::MethodCallParam => ".as_ptr() as *const *const i8".to_string(),
-                    ParameterFlavor::Rust | ParameterFlavor::RustStruct => "Vec<std::ffi::CString>".to_string(),
+                    ParameterFlavor::MethodCallParam => format!("{}.as_ptr() as *const *const i8", name),
+                    ParameterFlavor::RustStruct => format!("{}", name),
+                    ParameterFlavor::Rust => "Vec<std::ffi::CString>".to_string(),
                     ParameterFlavor::SpiFn => ".iter().map(|s| s.as_ptr()).collect::<Vec<_>>().as_ptr() as *const *const i8".to_string(),
                     ParameterFlavor::None => "/* char** */".to_string(),
                 },
                 _ => panic!("Unhandled pointer to pointer type"),
             }
         }
+        TypeKind::Record => {
+            let decl = pointee_type.get_declaration().unwrap();
+            let type_name = get_full_name_of_entity(&decl);
+            console_debug!("TypeKind::Record {:?} {:?} {:?}", decl, type_name, flavor,);
+            match flavor {
+                ParameterFlavor::MethodCallParam => format!("&mut *{}", name),
+                ParameterFlavor::Rust | ParameterFlavor::RustStruct => {
+                    configs.life_time_on_children = true;
+                    format!("&{}{}", configs.life_time, type_name)
+                }
+                ParameterFlavor::SpiFn => format!("{}", type_name),
+                ParameterFlavor::None => format!("/* {} */", type_name),
+            }
+        }
+        TypeKind::Elaborated => {
+            let type_name = pointee_type.get_display_name();
+            match flavor {
+                ParameterFlavor::MethodCallParam => {
+                    if entity_type.is_const_qualified() {
+                        format!("{}", name)
+                    } else {
+                        format!("{} as *mut", name)
+                    }
+                }
+                ParameterFlavor::Rust | ParameterFlavor::RustStruct => {
+                    if entity_type.is_const_qualified() {
+                        format!("&{}", type_name)
+                    } else {
+                        format!("&mut {}", type_name)
+                    }
+                }
+                ParameterFlavor::SpiFn => format!("&{}", type_name),
+                ParameterFlavor::None => format!("/* {} */", type_name),
+            }
+        }
         _ => {
             if let Some(decl) = pointee_type.get_declaration() {
                 let type_name = get_full_name_of_entity(&decl);
                 match flavor {
-                    ParameterFlavor::MethodCallParam => format!(" as *const {}", type_name),
+                    ParameterFlavor::MethodCallParam => format!("{}", name),
                     ParameterFlavor::Rust | ParameterFlavor::RustStruct => {
                         configs.life_time_on_children = true;
                         format!("&{}{}", configs.life_time, type_name)
-                    }
-                    ParameterFlavor::SpiFn => format!("&{}", type_name),
-                    ParameterFlavor::None => format!("/* {} */", type_name),
-                }
-            } else if pointee_type.get_kind() == TypeKind::Elaborated {
-                let type_name = pointee_type.get_display_name();
-                match flavor {
-                    ParameterFlavor::MethodCallParam => {
-                        if entity_type.is_const_qualified() {
-                            format!(" as *const {}", type_name)
-                        } else {
-                            format!(" as *mut {}", type_name)
-                        }
-                    }
-                    ParameterFlavor::Rust | ParameterFlavor::RustStruct => {
-                        if entity_type.is_const_qualified() {
-                            format!("&{}", type_name)
-                        } else {
-                            format!("&mut {}", type_name)
-                        }
                     }
                     ParameterFlavor::SpiFn => format!("&{}", type_name),
                     ParameterFlavor::None => format!("/* {} */", type_name),
@@ -214,7 +234,7 @@ fn get_pointer_parameter(
     }
 }
 
-fn get_typedef_parameter(entity_type: &Type, configs: &mut HandlerConfigs) -> String {
+fn get_typedef_parameter(name: &str, entity_type: &Type, configs: &mut HandlerConfigs) -> String {
     let underlying_type = entity_type
         .get_declaration()
         .unwrap()
@@ -230,7 +250,7 @@ fn get_typedef_parameter(entity_type: &Type, configs: &mut HandlerConfigs) -> St
             ParameterFlavor::SpiFn => "as *const std::os::raw::c_char".to_string(),
             ParameterFlavor::None => "/* c_char */".to_string(),
         },
-        TypeKind::Pointer => get_pointer_parameter(&underlying_type, configs), // Delegate to the pointer handler
+        TypeKind::Pointer => get_pointer_parameter(&name, &underlying_type, configs), // Delegate to the pointer handler
         TypeKind::Int => match flavor {
             ParameterFlavor::MethodCallParam
             | ParameterFlavor::Rust

@@ -15,7 +15,7 @@ macro_rules! console_debug {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum MethodFlavor {
     /// method is in a struct
     Struct,

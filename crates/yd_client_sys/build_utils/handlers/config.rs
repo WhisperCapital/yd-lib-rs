@@ -3,7 +3,7 @@ use super::{
     handle_record::RecordFlavor,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct HandlerConfigs {
     pub method_flavor: MethodFlavor,
     pub parameter_flavor: ParameterFlavor,
