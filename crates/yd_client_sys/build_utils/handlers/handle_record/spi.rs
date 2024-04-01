@@ -143,7 +143,7 @@ pub fn handle_spi_output_enum(
     let full_spi_output_enum_name = format!("{full_rust_struct_name}Output<'a>");
     lines.push(format!(
         r#"
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum {full_spi_output_enum_name} {{
 "#
     ));

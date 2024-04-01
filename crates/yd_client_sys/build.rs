@@ -106,6 +106,7 @@ fn generate_type(generated_dir: &Path) {
     bindings
         .write_to_file(&file_path)
         .expect("Couldn't write bindings!");
+    // patch_generated_binding(&file_path);
 }
 
 /// 生成用于主动调用的 API 的 unsafe fn wrapper，以免每次在业务代码里调用 API 都要手动写
@@ -145,4 +146,27 @@ fn generate_spi_wrapper(entity: &Entity, handlers: &HandlerMap, generated_dir: &
     //     }
     //     EntityVisitResult::Recurse
     // });
+}
+
+fn patch_generated_binding(file_path: &Path) {
+    // Read the file content
+    let mut content = fs::read_to_string(file_path).expect("Could not read file");
+
+    // Add Arc and Mutex to the import statements
+    // let import_statement = "use std::sync::{Arc, Mutex};\n";
+    // content.insert_str(0, import_statement);
+
+    // Replace the derive attribute for YDExchange
+    content = content.replace(
+        "#[derive(Copy, Clone)]",
+        "#[derive(Debug, Copy, Clone)]",
+    );
+
+    // Write the modified content back to the file
+    let mut file = fs::OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .open(file_path)
+        .expect("Could not open file");
+    file.write_all(content.as_bytes()).expect("Could not write to file");
 }
