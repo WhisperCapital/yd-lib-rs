@@ -81,6 +81,14 @@ pub fn handle_function_prototype(
                 // TODO: 在别处处理类的析构
                 return lines;
             }
+            if raw_camel_case_name.contains("Multi") {
+                // TODO: 在别处处理类的析构
+                /*
+                 * 跳过 `insert_multi_orders cancel_multi_orders insert_multi_quotes cancel_multi_quotes` 直到了解正确的类型转换方式
+                 */
+                lines.push(format!("{}// {snake_fn_name} // Ignored (MethodFlavor::ApiTrait)\n", *INDENT));
+                return lines;
+            }
             lines.push(format!("{}pub fn {snake_fn_name}(&mut self", *INDENT));
             if !child_lines_rs.is_empty() {
                 lines.push(format!(", "));
