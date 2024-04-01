@@ -1,5 +1,5 @@
 use crate::build_utils::{
-    config::HandlerConfigs, format_name::get_full_name_of_entity, Handler, HandlerMap,
+    config::HandlerConfigs, format_name::get_full_name_of_entity, handle_record::RecordFlavor, Handler, HandlerMap
 };
 use clang::*;
 use inflector::Inflector;
@@ -10,7 +10,7 @@ lazy_static! {
 
 #[derive(Clone, Debug)]
 pub enum ParameterFlavor {
-    /// return c style parameter code
+    /// return method call style parameter code
     MethodCallParam,
     /// return rust style parameter code
     Rust,
@@ -98,11 +98,17 @@ pub fn handle_function_parameter(
             let rust_type = get_full_name_of_entity(&d);
             format_parameter(&entity_name, &rust_type, &configs.parameter_flavor)
         }
-        TypeKind::IncompleteArray => format_parameter(
-            &entity_name,
-            "Vec<std::ffi::CString>",
-            &configs.parameter_flavor,
-        ),
+        TypeKind::IncompleteArray => match &configs.parameter_flavor {
+                ParameterFlavor::MethodCallParam => match &configs.record_flavor { 
+                RecordFlavor::SPI => format!("{}", &entity_name),
+                _ => format!("{}.iter().map(|cs| cs.as_ptr()).collect::<Vec<_>>().as_mut_ptr() as *mut *mut i8", &entity_name)
+            }
+            _ => format_parameter(
+                &entity_name,
+                "Vec<std::ffi::CString>",
+                &configs.parameter_flavor,
+            ),
+        },
         _ => {
             println!("handle_function_parameter not handling {:?}", entity_type);
             panic!("");
@@ -156,7 +162,7 @@ fn get_pointer_parameter(name: &str, entity_type: &Type, configs: &mut HandlerCo
     console_debug!("get_pointer_parameter {:?} {:?}", pointee_type, flavor,);
     match pointee_type.get_kind() {
         TypeKind::CharS => match flavor {
-            ParameterFlavor::MethodCallParam => format!("{}", name),
+            ParameterFlavor::MethodCallParam => format!("{}.as_ptr()", name),
             ParameterFlavor::Rust | ParameterFlavor::RustStruct => "std::ffi::CString".to_string(),
             ParameterFlavor::SpiFn => "*const std::os::raw::c_char".to_string(),
             ParameterFlavor::None => "/* char* */".to_string(),

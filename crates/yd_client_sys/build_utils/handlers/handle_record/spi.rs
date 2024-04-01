@@ -5,6 +5,8 @@ use crate::build_utils::{
     config::HandlerConfigs, handle_function_prototype::MethodFlavor, process_children, HandlerMap,
 };
 
+use super::RecordFlavor;
+
 pub fn handle_spi_record(
     entity: &Entity,
     handlers: &HandlerMap,
@@ -211,6 +213,7 @@ pub fn handle_spi_c_fn(
         handlers,
         &mut HandlerConfigs {
             method_flavor: MethodFlavor::CFn,
+            record_flavor: RecordFlavor::SPI,
             ..configs.clone()
         },
     )
