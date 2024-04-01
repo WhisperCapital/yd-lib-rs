@@ -168,7 +168,7 @@ fn get_pointer_parameter(name: &str, entity_type: &Type, configs: &mut HandlerCo
             ParameterFlavor::None => "/* char* */".to_string(),
         },
         TypeKind::UChar => match flavor {
-            ParameterFlavor::MethodCallParam => format!("{}", name),
+            ParameterFlavor::MethodCallParam => format!("{} as *mut ::std::os::raw::c_uchar", name),
             ParameterFlavor::Rust | ParameterFlavor::RustStruct => "u8".to_string(),
             ParameterFlavor::SpiFn => "*const std::os::raw::c_uchar".to_string(),
             ParameterFlavor::None => "/* unsigned char* */".to_string(),
