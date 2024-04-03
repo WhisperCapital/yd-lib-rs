@@ -192,7 +192,11 @@ fn get_pointer_parameter(name: &str, entity_type: &Type, configs: &mut HandlerCo
             console_debug!("TypeKind::Record {:?} {:?} {:?}", decl, type_name, flavor,);
             match flavor {
                 ParameterFlavor::MethodCallParam => format!("&mut *{}", name),
-                ParameterFlavor::Rust | ParameterFlavor::RustStruct => {
+                ParameterFlavor::Rust  => {
+                    configs.life_time_on_children = true;
+                    format!("&mut {}{}", configs.life_time, type_name)
+                }
+                ParameterFlavor::RustStruct => {
                     configs.life_time_on_children = true;
                     format!("&{}{}", configs.life_time, type_name)
                 }
