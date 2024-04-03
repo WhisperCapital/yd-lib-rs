@@ -253,8 +253,8 @@ struct {full_spi_name}Inner<'a> {{
     waker: Option<Waker>,
 }}
 
-impl {full_spi_name}Inner<'_> {{
-    fn push(&mut self, msg: {full_spi_output_enum_name}) {{
+impl<'a> {full_spi_name}Inner<'a> {{
+    fn push(&mut self, msg: {full_spi_output_enum_name}<'a>) {{
         self.buf.push_back(msg);
         if let Some(ref waker) = &self.waker {{
             waker.clone().wake()
