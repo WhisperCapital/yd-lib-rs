@@ -18,7 +18,7 @@ macro_rules! console_debug {
 #[derive(Clone, Debug)]
 pub enum MethodFlavor {
     /// method is in a struct
-    Struct,
+    VTableStruct,
     /// method is in a trait
     SpiTrait,
     ApiTrait,
@@ -134,15 +134,24 @@ pub fn handle_function_prototype(
 "#
             ));
         }
-        MethodFlavor::Struct => {
+        MethodFlavor::VTableStruct => {
             lines.push(format!(
                 r#"{}{snake_fn_name}: extern "C" fn(spi: *mut {record_name}Fat"#,
                 *INDENT
             ));
-            if !child_lines_rs.is_empty() {
+            let child_lines_rs_v_table = process_children(
+                entity,
+                handlers,
+                &mut HandlerConfigs {
+                    parameter_flavor: ParameterFlavor::Rust,
+                    prefer_pointer: true,
+                    ..configs.clone()
+                },
+            );
+            if !child_lines_rs_v_table.is_empty() {
                 lines.push(format!(", "));
             }
-            lines.extend(child_lines_rs);
+            lines.extend(child_lines_rs_v_table);
             lines.push(format!("),\n"));
         }
         MethodFlavor::StaticTable => {

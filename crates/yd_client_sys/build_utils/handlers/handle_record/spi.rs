@@ -127,7 +127,7 @@ struct {vtable_struct_name} {{
         entity,
         handlers,
         &mut HandlerConfigs {
-            method_flavor: MethodFlavor::Struct,
+            method_flavor: MethodFlavor::VTableStruct,
             ..configs.clone()
         },
     ));
