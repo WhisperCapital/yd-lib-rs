@@ -230,9 +230,9 @@ pub fn handle_spi_fat(
     format!(
         r#"
 #[repr(C)]
-pub struct {full_rust_struct_name}Fat {{
+pub struct {full_rust_struct_name}Fat<'a> {{
   vtable: *const {vtable_struct_name},
-  pub md_spi_ptr: *mut dyn {full_trait_name},
+  pub md_spi_ptr: *mut dyn {full_trait_name}<'a>,
 }}
 "#
     )
@@ -314,7 +314,7 @@ pub fn handle_spi_fn(
 ) -> Vec<String> {
     let mut lines = Vec::new();
     lines.push(format!(
-        "\nimpl<'a> {full_trait_name} for {full_rust_struct_name}Stream<'a> {{\n",
+        "\nimpl<'a> {full_trait_name}<'a> for {full_rust_struct_name}Stream<'a> {{\n",
     ));
     lines.extend(process_children(
         entity,

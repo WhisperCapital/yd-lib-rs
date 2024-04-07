@@ -234,7 +234,7 @@ extern "C" fn spi_{snake_fn_name}(spi: *mut {record_name}Fat"#
             let config_for_children = &mut HandlerConfigs {
                 // ask function handler to output trait style code
                 parameter_flavor: ParameterFlavor::Rust,
-                life_time: "'b ".to_string(),
+                life_time: "'a ".to_string(),
                 ..configs.clone()
             };
             let child_lines_rs_param = process_children(
@@ -242,12 +242,7 @@ extern "C" fn spi_{snake_fn_name}(spi: *mut {record_name}Fat"#
                 handlers,
                 config_for_children,
             );
-            let life_time_param_on_parent = if config_for_children.life_time_on_children {
-                "<'b>"
-            } else {
-                ""
-            };
-            lines.push(format!("{}fn {snake_fn_name}{life_time_param_on_parent}(&mut self", *INDENT,));
+            lines.push(format!("{}fn {snake_fn_name}(&mut self", *INDENT,));
             if !child_lines_rs_param.is_empty() {
                 lines.push(format!(", "));
             }
