@@ -231,6 +231,7 @@ extern "C" fn spi_{snake_fn_name}(spi: *mut {record_name}Fat"#
             lines.push(format!(
                 r#") {{
     unsafe {{
+        assert!(!spi.is_null());
 "#
             ));
             lines.extend(child_lines_unsafe_c_check);

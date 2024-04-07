@@ -250,10 +250,20 @@ fn get_pointer_parameter(name: &str, entity_type: &Type, configs: &mut HandlerCo
             if let Some(decl) = pointee_type.get_declaration() {
                 let entity_name = get_full_name_of_entity(&decl);
                 match flavor {
-                    ParameterFlavor::MethodCallParam => format!("{}", name),
+                    ParameterFlavor::MethodCallParam => {
+                        if configs.prefer_pointer {
+                            format!("&mut *{}", name)
+                        } else {
+                            format!("{}", name)
+                        }
+                    },
                     ParameterFlavor::Rust | ParameterFlavor::RustStruct => {
                         configs.life_time_on_children = true;
-                        format!("&{}{}", configs.life_time, entity_name)
+                        if configs.prefer_pointer {
+                            format!("*mut {}{}", configs.life_time, entity_name)
+                        } else {
+                            format!("&{}{}", configs.life_time, entity_name)
+                        }
                     }
                     ParameterFlavor::SpiFn => format!("&{}", entity_name),
                     ParameterFlavor::UnsafeCheck => format!("/* No checking 7 {:?} */", entity_name),
