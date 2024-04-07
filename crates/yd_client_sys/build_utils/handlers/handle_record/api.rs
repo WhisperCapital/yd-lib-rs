@@ -44,7 +44,20 @@ impl {full_rust_struct_name} {{
         },
     ));
     lines.push(format!(
-        r#"}}
+        r#"
+    /// encapsulate the raw pointer within YDApi
+    pub unsafe fn from_raw(api_ptr: *mut YDApi) -> Box<YDApi> {{
+        // Ensure the pointer is not null
+        if api_ptr.is_null() {{
+            panic!("YDApi pointer is null");
+        }}
+
+        // Dereference the pointer to obtain YDApi and return it
+        // This assumes that YDApi can be directly obtained from the pointer
+        // Adjust based on your actual struct layout
+        Box::from_raw(api_ptr)
+    }}
+}}
 unsafe impl Send for {full_rust_struct_name} {{}}
 "#
     ));

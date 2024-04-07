@@ -15,11 +15,22 @@ mod ffi_utils;
 pub use ffi_utils::*;
 use std::ffi::{CStr, CString};
 
-// Utility function to create a YDApi instance.
-pub fn create_yd_api(config_filename: &str) -> *mut YDApi {
+pub fn create_yd_api(config_filename: &str) -> Box<YDApi> {
     let cstr_config = CString::new(config_filename).unwrap();
-    unsafe { makeYDApi(cstr_config.as_ptr()) } // Adjusted to use the bindings module
+
+    // Call the unsafe function to create an instance of YDApi
+    let api_ptr = unsafe { makeYDApi(cstr_config.as_ptr()) };
+
+    // Ensure that api_ptr is not null
+    if api_ptr.is_null() {
+        panic!("Failed to create YDApi instance");
+    }
+
+    // Dereference the raw pointer to get YDApi and encapsulate it in the safe wrapper
+    // Assuming YDApi's constructor or a conversion method is available to encapsulate the raw pointer
+    unsafe { YDApi::from_raw(api_ptr) }
 }
+
 
 pub fn get_api_version() -> Option<String> {
     unsafe {

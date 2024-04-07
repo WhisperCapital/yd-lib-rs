@@ -1,18 +1,17 @@
 // Import necessary crates and modules. Adjust these imports based on your actual project structure and dependencies.
-use std::ffi::{CStr, CString};
-use std::os::raw::c_char;
+use std::ffi::CString;
 use std::ptr::null;
 
-use yd_client_sys::{
-    create_yd_api, YDAccountInstrumentInfo, YDApi, YDCancelOrder, YDInputOrder, YDInstrument,
-    YDListener, YDMarketData, YDOrder, YDPrePosition, YDTrade,
-};
+use yd_client_sys::bindings::{YDApi, YDListener, YDMarketData};
+use yd_client_sys::create_yd_api;
 
 // Define the Rust listener that implements `YDListener`. This struct will handle callbacks from the YDApi.
 struct YDExample1Listener {
     api: YDApi,
     username: CString,
     password: CString,
+    app_id: CString,
+    auth_code: CString,
     instrument_id: CString,
     max_position: i32,
     max_order_ref: i32,
@@ -24,6 +23,8 @@ impl YDExample1Listener {
         api: YDApi,
         username: &str,
         password: &str,
+        app_id: &str,
+        auth_code: &str,
         instrument_id: &str,
         max_position: i32,
     ) -> Self {
@@ -31,6 +32,8 @@ impl YDExample1Listener {
             api,
             username: CString::new(username).unwrap(),
             password: CString::new(password).unwrap(),
+            app_id: CString::new(app_id).unwrap(),
+            auth_code: CString::new(auth_code).unwrap(),
             instrument_id: CString::new(instrument_id).unwrap(),
             max_position,
             max_order_ref: 0,
@@ -44,10 +47,7 @@ impl YDExample1Listener {
         if has_login_failed {
             println!("Previous login attempt failed, retrying...");
         }
-        // Attempt to login
-        let username_ptr = self.username.as_ptr();
-        let password_ptr = self.password.as_ptr();
-        if !self.api.login(username_ptr, password_ptr, null(), null()) {
+        if !self.api.login(self.username, self.password, self.app_id, self.auth_code) {
             println!("Cannot login");
             std::process::exit(1);
         }
@@ -64,26 +64,22 @@ impl YDExample1Listener {
     }
 
     fn notify_finish_init(&mut self) {
-        // Initialization logic after successful login
-        let instrument_ptr = self.instrument_id.as_ptr();
-        // Assuming `get_instrument_by_id` returns an Option pointing to a YDInstrument
-        match self.api.get_instrument_by_id(instrument_ptr) {
-            Some(instrument) => {
-                // Perform further actions with `instrument`, such as subscribing to market data or querying account info
-                println!(
-                    "Instrument {} initialized.",
-                    self.instrument_id.to_string_lossy()
-                );
-            }
-            None => {
-                println!(
-                    "Cannot find instrument {}",
-                    self.instrument_id.to_string_lossy()
-                );
-                std::process::exit(1);
-            }
+        let instrument_ptr = self.api.get_instrument_by_id(self.instrument_id.clone());
+
+        if !instrument_ptr.is_null() {
+            let instrument = unsafe { &*instrument_ptr };
+            println!(
+                "Instrument {} initialized.",
+                self.instrument_id.to_string_lossy()
+            );
+            // Further actions with `instrument`...
+        } else {
+            println!(
+                "Cannot find instrument {}",
+                self.instrument_id.to_string_lossy()
+            );
+            std::process::exit(1);
         }
-        // Additional initialization logic...
     }
 
     fn notify_market_data(&mut self, market_data: &YDMarketData) {
@@ -103,10 +99,23 @@ fn main() {
     let instrument_id = "example_instrument";
     let max_position = 3;
 
-    // Example of creating the YDApi instance and the listener, then starting the API.
-    let api = create_yd_api(&config_filename);
+    let api_ptr = create_yd_api(&config_filename);
+    let mut listener = YDExample1Listener::new(api_ptr, username, password, "", "", instrument_id, max_position);
 
-    if !api.start(listener) {
-        println!("Failed to start YDApi.");
+    // Ensure `api_ptr` is not null
+    if api_ptr.is_null() {
+        eprintln!("Failed to create YDApi.");
+        std::process::exit(1);
+    }
+
+    // Convert `listener` to a raw pointer
+    let listener_ptr: *mut YDListener = &mut listener as *mut _ as *mut YDListener;
+
+    // Use an unsafe block to dereference `api_ptr` and call `start`
+    unsafe {
+        if !((*(*api_ptr).vtable_).YDApi_start)(api_ptr, listener_ptr) {
+            eprintln!("Failed to start YDApi.");
+            std::process::exit(1);
+        }
     }
 }
