@@ -200,12 +200,13 @@ pub struct {packet_name_prefix}Packet{life_time_param_on_parent} {{
             lines.push(format!("\n}}\n"));
         }
         MethodFlavor::CFn => {
-            let child_lines_c = process_children(
+            let child_lines_rs_c_fn = process_children(
                 entity,
                 handlers,
                 &mut HandlerConfigs {
                     // ask function handler to output trait style code
-                    parameter_flavor: ParameterFlavor::MethodCallParam,
+                    parameter_flavor: ParameterFlavor::Rust,
+                    prefer_pointer: true,
                     ..configs.clone()
                 },
             );
@@ -213,15 +214,40 @@ pub struct {packet_name_prefix}Packet{life_time_param_on_parent} {{
                 r#"
 extern "C" fn spi_{snake_fn_name}(spi: *mut {record_name}Fat"#
             ));
-            if !child_lines_rs.is_empty() {
+            if !child_lines_rs_c_fn.is_empty() {
                 lines.push(format!(", "));
             }
-            lines.extend(child_lines_rs);
+            lines.extend(child_lines_rs_c_fn);
+            // add pointer check
+            let child_lines_unsafe_c_check = process_children(
+                entity,
+                handlers,
+                &mut HandlerConfigs {
+                    // ask function handler to output trait style code
+                    parameter_flavor: ParameterFlavor::UnsafeCheck,
+                    ..configs.clone()
+                },
+            );
             lines.push(format!(
                 r#") {{
     unsafe {{
+"#
+            ));
+            lines.extend(child_lines_unsafe_c_check);
+            lines.push(format!(
+                r#"
         (*(*spi).md_spi_ptr).{snake_fn_name}("#,
             ));
+            let child_lines_c = process_children(
+                entity,
+                handlers,
+                &mut HandlerConfigs {
+                    // ask function handler to output trait style code
+                    parameter_flavor: ParameterFlavor::MethodCallParam,
+                    prefer_pointer: true,
+                    ..configs.clone()
+                },
+            );
             lines.extend(child_lines_c);
             lines.push(format!(
                 r#")
@@ -242,7 +268,7 @@ extern "C" fn spi_{snake_fn_name}(spi: *mut {record_name}Fat"#
                 handlers,
                 config_for_children,
             );
-            lines.push(format!("{}fn {snake_fn_name}(&mut self", *INDENT,));
+            lines.push(format!("{}fn {snake_fn_name}(&mut self", *INDENT));
             if !child_lines_rs_param.is_empty() {
                 lines.push(format!(", "));
             }

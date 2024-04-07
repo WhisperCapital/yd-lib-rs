@@ -12,6 +12,7 @@ pub struct HandlerConfigs {
     pub life_time: String,
     /// modified by children, to let parent know if any child use a life time parameter
     pub life_time_on_children: bool,
+    pub prefer_pointer: bool,
     /// the index of this child in its parent
     pub index: usize,
     /// how many children does the parent have, only count children with same type (and processed by same handler)
@@ -27,6 +28,7 @@ impl Default for HandlerConfigs {
             record_flavor: RecordFlavor::None,
             life_time: "".to_string(),
             life_time_on_children: false,
+            prefer_pointer: false,
             record_name: "WarningRecordNameUnfilled".to_string(),
             index: 0,
             num_parent_children_same_handler: 0,
