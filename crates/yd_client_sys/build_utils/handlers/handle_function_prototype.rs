@@ -69,11 +69,22 @@ pub fn handle_function_prototype(
     );
     match configs.method_flavor {
         MethodFlavor::SpiTrait => {
+            let config_for_children = &mut HandlerConfigs {
+                // ask function handler to output trait style code
+                parameter_flavor: ParameterFlavor::Rust,
+                life_time: "'a ".to_string(),
+                ..configs.clone()
+            };
+            let child_lines_spi_param = process_children(
+                entity,
+                handlers,
+                config_for_children,
+            );
             lines.push(format!("{}fn {snake_fn_name}(&mut self", *INDENT));
-            if !child_lines_rs.is_empty() {
+            if !child_lines_spi_param.is_empty() {
                 lines.push(format!(", "));
             }
-            lines.extend(child_lines_rs);
+            lines.extend(child_lines_spi_param);
             lines.push(format!(") {{}}\n"));
         }
         MethodFlavor::ApiTrait => {
@@ -151,7 +162,6 @@ pub fn handle_function_prototype(
                 handlers,
                 config_for_children,
             );
-            // life_time_param_on_parent = config_for_children.life_time_on_children ? "<'a>" : "";
             let life_time_param_on_parent = if config_for_children.life_time_on_children {
                 "<'a>"
             } else {
@@ -221,11 +231,27 @@ extern "C" fn spi_{snake_fn_name}(spi: *mut {record_name}Fat"#
             ));
         }
         MethodFlavor::SpiFn => {
-            lines.push(format!("{}fn {snake_fn_name}(&mut self", *INDENT,));
-            if !child_lines_rs.is_empty() {
+            let config_for_children = &mut HandlerConfigs {
+                // ask function handler to output trait style code
+                parameter_flavor: ParameterFlavor::Rust,
+                life_time: "'b ".to_string(),
+                ..configs.clone()
+            };
+            let child_lines_rs_param = process_children(
+                entity,
+                handlers,
+                config_for_children,
+            );
+            let life_time_param_on_parent = if config_for_children.life_time_on_children {
+                "<'b>"
+            } else {
+                ""
+            };
+            lines.push(format!("{}fn {snake_fn_name}{life_time_param_on_parent}(&mut self", *INDENT,));
+            if !child_lines_rs_param.is_empty() {
                 lines.push(format!(", "));
             }
-            lines.extend(child_lines_rs.clone());
+            lines.extend(child_lines_rs_param.clone());
             lines.push(format!(
                 r#") {{
         self.inner.lock().unwrap().push("#

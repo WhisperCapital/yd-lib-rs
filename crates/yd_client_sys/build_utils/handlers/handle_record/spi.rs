@@ -95,7 +95,7 @@ pub fn handle_spi_trait(
     full_trait_name: &str,
 ) -> Vec<String> {
     let mut lines = Vec::new();
-    lines.push(format!("\npub trait {full_trait_name} {{\n"));
+    lines.push(format!("\npub trait {full_trait_name}<'a> {{\n"));
     lines.extend(process_children(
         entity,
         handlers,
@@ -314,7 +314,7 @@ pub fn handle_spi_fn(
 ) -> Vec<String> {
     let mut lines = Vec::new();
     lines.push(format!(
-        "\nimpl {full_trait_name} for {full_rust_struct_name}Stream<'_> {{\n",
+        "\nimpl<'a> {full_trait_name} for {full_rust_struct_name}Stream<'a> {{\n",
     ));
     lines.extend(process_children(
         entity,
