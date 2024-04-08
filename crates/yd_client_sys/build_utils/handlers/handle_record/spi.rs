@@ -120,7 +120,7 @@ pub fn handle_spi_vtable(
         r#"
 #[repr(C)]
 #[derive(Debug)]
-struct {vtable_struct_name} {{
+pub struct {vtable_struct_name} {{
 "#
     ));
     lines.extend(process_children(
@@ -188,7 +188,7 @@ pub fn handle_spi_static_table(
     let vtable_struct_name = format!("{full_rust_struct_name}VTable");
     lines.push(format!(
         r#"
-static {full_static_vtable_var_name}: {vtable_struct_name} = {vtable_struct_name} {{
+pub static {full_static_vtable_var_name}: {vtable_struct_name} = {vtable_struct_name} {{
 "#
     ));
     lines.extend(process_children(

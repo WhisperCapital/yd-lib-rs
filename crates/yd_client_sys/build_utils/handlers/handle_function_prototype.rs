@@ -75,11 +75,7 @@ pub fn handle_function_prototype(
                 life_time: "'a ".to_string(),
                 ..configs.clone()
             };
-            let child_lines_spi_param = process_children(
-                entity,
-                handlers,
-                config_for_children,
-            );
+            let child_lines_spi_param = process_children(entity, handlers, config_for_children);
             lines.push(format!("{}fn {snake_fn_name}(&mut self", *INDENT));
             if !child_lines_spi_param.is_empty() {
                 lines.push(format!(", "));
@@ -92,12 +88,30 @@ pub fn handle_function_prototype(
                 // TODO: 在别处处理类的析构
                 return lines;
             }
+            if raw_camel_case_name == "start" {
+                /*
+                 * 使用我们包装过的 Trait，而不是原生的 Listener 类
+                 * 并加入定制的逻辑
+                 */
+                lines.push(format!(
+                    r#"
+    pub fn start(&mut self, p_listener: *const dyn YDListenerTrait) -> bool {{
+        let p_listener = Box::into_raw(Box::new(( &YD_LISTENER_VTABLE, p_listener)));
+        unsafe {{
+            ((*(*self).vtable_).YDApi_start)(self as *mut YDApi, p_listener as *mut YDListener)
+        }}
+    }}
+"#,));
+                return lines;
+            }
             if raw_camel_case_name.contains("Multi") {
-                // TODO: 在别处处理类的析构
                 /*
                  * 跳过 `insert_multi_orders cancel_multi_orders insert_multi_quotes cancel_multi_quotes` 直到了解正确的类型转换方式
                  */
-                lines.push(format!("{}// {snake_fn_name} // Ignored (MethodFlavor::ApiTrait)\n", *INDENT));
+                lines.push(format!(
+                    "{}// {snake_fn_name} // Ignored (MethodFlavor::ApiTrait)\n",
+                    *INDENT
+                ));
                 return lines;
             }
             lines.push(format!("{}pub fn {snake_fn_name}(&mut self", *INDENT));
@@ -166,18 +180,17 @@ pub fn handle_function_prototype(
                 parameter_flavor: ParameterFlavor::RustStruct,
                 ..configs.clone()
             };
-            process_children(
-                entity,
-                handlers,
-                config_for_children,
-            );
+            process_children(entity, handlers, config_for_children);
             let life_time_param_on_parent = if config_for_children.life_time_on_children {
                 "<'a>"
             } else {
                 ""
             };
             configs.life_time_on_children = false;
-            lines.push(format!("{}{enum_name}({packet_name_prefix}Packet{life_time_param_on_parent}),\n", *INDENT));
+            lines.push(format!(
+                "{}{enum_name}({packet_name_prefix}Packet{life_time_param_on_parent}),\n",
+                *INDENT
+            ));
         }
         MethodFlavor::OutputEnumStruct => {
             let config_for_children = &mut HandlerConfigs {
@@ -186,11 +199,7 @@ pub fn handle_function_prototype(
                 life_time: "'a ".to_string(),
                 ..configs.clone()
             };
-            let child_lines_rs_struct = process_children(
-                entity,
-                handlers,
-                config_for_children,
-            );
+            let child_lines_rs_struct = process_children(entity, handlers, config_for_children);
             // life_time_param_on_parent = config_for_children.life_time_on_children ? "<'a>" : "";
             let life_time_param_on_parent = if config_for_children.life_time_on_children {
                 "<'a>"
@@ -273,11 +282,7 @@ extern "C" fn spi_{snake_fn_name}(spi: *mut {record_name}Fat"#
                 life_time: "'a ".to_string(),
                 ..configs.clone()
             };
-            let child_lines_rs_param = process_children(
-                entity,
-                handlers,
-                config_for_children,
-            );
+            let child_lines_rs_param = process_children(entity, handlers, config_for_children);
             lines.push(format!("{}fn {snake_fn_name}(&mut self", *INDENT));
             if !child_lines_rs_param.is_empty() {
                 lines.push(format!(", "));
