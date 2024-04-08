@@ -9,6 +9,7 @@ memchr = "2.3.3"
 simple-error = "0.3.0"
 tokio = { version = "1", features = ["full"] }
 futures = "0.3"
+log = "0.4"
 
 [build-dependencies]
 bindgen = "0.69.4"

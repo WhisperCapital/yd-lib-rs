@@ -13,6 +13,9 @@ pub use generated::spi_wrapper;
 
 mod ffi_utils;
 pub use ffi_utils::*;
+use generated::spi_wrapper::create_spi;
+use generated::spi_wrapper::YDListenerStream;
+use generated::spi_wrapper::YDListenerTrait;
 use std::ffi::{CStr, CString};
 
 pub fn create_yd_api(config_filename: &str) -> Box<YDApi> {
@@ -29,6 +32,18 @@ pub fn create_yd_api(config_filename: &str) -> Box<YDApi> {
     // Dereference the raw pointer to get YDApi and encapsulate it in the safe wrapper
     // Assuming YDApi's constructor or a conversion method is available to encapsulate the raw pointer
     unsafe { YDApi::from_raw(api_ptr) }
+}
+
+pub fn create_yd_api_and_spi(config_filename: &str) -> (Box<YDApi>, Box<YDListenerStream<'static>>) {
+    let mut api = create_yd_api(config_filename);
+
+    // Initialize the SPI and get the stream
+    let (spi_stream, spi_ptr) = create_spi();
+
+    // Register the SPI with the API
+    api.start(spi_ptr as *const dyn YDListenerTrait);
+
+    (api, spi_stream)
 }
 
 
