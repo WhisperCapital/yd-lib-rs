@@ -46,14 +46,3 @@ pub fn create_yd_api_and_spi(config_filename: &str) -> (Box<YDApi>, Box<YDListen
     (api, spi_stream)
 }
 
-
-pub fn get_api_version() -> Option<String> {
-    unsafe {
-        let version_c_str = getYDVersion(); // Adjusted to use the bindings module
-        if version_c_str.is_null() {
-            None
-        } else {
-            Some(CStr::from_ptr(version_c_str).to_string_lossy().into_owned())
-        }
-    }
-}
