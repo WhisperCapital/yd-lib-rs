@@ -96,7 +96,7 @@ pub fn handle_function_prototype(
                 lines.push(format!(
                     r#"
     pub fn start(&mut self, p_listener: *const dyn YDListenerTrait) -> bool {{
-        let p_listener = Box::into_raw(Box::new(( &YD_LISTENER_VTABLE, p_listener)));
+        let p_listener = Box::into_raw(Box::new((&YD_LISTENER_VTABLE, p_listener)));
         unsafe {{
             ((*(*self).vtable_).YDApi_start)(self as *mut YDApi, p_listener as *mut YDListener)
         }}
