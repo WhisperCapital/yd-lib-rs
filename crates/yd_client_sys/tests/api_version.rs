@@ -42,9 +42,15 @@ fn get_api_version2(config_filename: &str) -> Option<String> {
 
 #[test]
 fn test_get_api_version2() {
-    let config_path = "crates/yd_client_sys/examples/config.txt";
+    // Obtain the current working directory
+    let mut config_path = std::env::current_dir().expect("Failed to get current directory");
+    // Append the relative path to the config.txt file
+    // Adjust the relative path as needed based on the location you're running the test from
+    config_path.push("examples/config.txt");
+    assert!(config_path.exists(), "Config file does not exist at the expected path {:?}", config_path);
+    let config_path_str = config_path.to_str().expect("Failed to convert config path to string");
     let version =
-        get_api_version2(config_path).expect("Failed to get API version using getVersion2");
+        get_api_version2(config_path_str).expect("Failed to get API version using getVersion2");
     assert!(
         !version.is_empty(),
         "API version should not be empty using getVersion2."

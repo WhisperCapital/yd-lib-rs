@@ -26,7 +26,7 @@ pub fn create_yd_api(config_filename: &str) -> Box<YDApi> {
 
     // Ensure that api_ptr is not null
     if api_ptr.is_null() {
-        panic!("Failed to create YDApi instance");
+        panic!("Failed to create YDApi instance, get null pointer.");
     }
 
     // Dereference the raw pointer to get YDApi and encapsulate it in the safe wrapper
